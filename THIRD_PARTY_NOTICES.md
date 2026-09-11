@@ -1,13 +1,15 @@
-# 第三方资源说明
+# Third-party notices
 
-项目原创源码和文档使用根目录中的 MIT License。下列第三方品牌图片不由该许可证授权，相关权利归各自权利人：
+**English** | [简体中文](THIRD_PARTY_NOTICES.zh-CN.md)
 
-| 文件 | 对应品牌 |
+Original project source code and documentation use the MIT License at the repository root. The following third-party brand images are outside that license grant; their rights belong to their respective owners:
+
+| File | Brand |
 | --- | --- |
 | `Sources/ProjectSweepApp/Resources/ToolLogos/ToolLogoCodex.png` | OpenAI / Codex |
 | `Sources/ProjectSweepApp/Resources/ToolLogos/ToolLogoClaude.png` | Anthropic / Claude |
 | `Sources/ProjectSweepApp/Resources/ToolLogos/ToolLogoCursor.png` | Cursor |
 
-图片只用于标识应用所管理的第三方工具。原始来源与资源处理记录见 [工具标识来源](docs/tool-logo-sources.md)。这些名称和标识不表示官方背书、合作或隶属关系。
+The images identify the third-party tools managed by the app. See [logo sources](docs/tool-logo-sources.md) for origin and processing details. These names and logos do not imply official endorsement, partnership, or affiliation.
 
-本项目使用 macOS 系统框架和系统 SQLite，没有随源码引入第三方 Swift 包。
+The project uses macOS system frameworks and system SQLite. It does not include third-party Swift packages in its source dependencies.

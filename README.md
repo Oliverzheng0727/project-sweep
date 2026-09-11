@@ -1,81 +1,25 @@
-# 项目清理 · Project Sweep
+# Project Sweep
 
-原生中文 Mac App，用于整理 AI 开发、文档、PPT、图片、视频项目留下的文件，以及受支持工具的本地数据。应用自身不接入 AI，不需要 API Key，不下载模型。
+**English** | [简体中文](README.zh-CN.md)
 
-## 运行与使用
+A native macOS app for cleaning up AI-assisted projects, local tool data, and skills. Inspect a project, choose what to remove, review the impact, and clean up with explicit confirmation.
 
-当前版本 **0.3.2**，面向 Apple Silicon、macOS 14 及以上，使用本机临时签名；尚未公证或用于商店发布。从源码构建后，可将 `dist/ProjectSweep-macOS-arm64.zip` 解压到本机应用程序目录运行。
+Project Sweep runs locally. It does not connect to an AI service, require an API key, or download a model. It supports code, documents, presentations, images, video, and mixed projects.
 
-构建同时生成 `dist/Project Sweep.app`。如果工作区在 iCloud 等同步目录中，同步服务可能为应用补写 Finder 属性并干扰签名校验；ZIP 在独立临时目录完成签名与归档，不受这类属性回写影响。
+**Version:** 0.3.2 · **Platform:** Apple Silicon, macOS 14+ · **App interface:** Simplified Chinese
 
-1. 在「项目库」选择或拖入项目总目录，例如桌面的 `Claude` 文件夹。首页只列出第一层项目文件夹，不深入扫描所有项目。
-2. 网格或紧凑列表共用搜索、排序和选中项目。日期以文件夹本身的**创建时间**为准，「按创建时间」从新到旧排序；无法读取时显示「未知」，不拿修改时间或当前时间代替。双击项目，或选中后按回车「深入整理」。随后只扫描这个项目的文件，并匹配已授权工具中明确关联的本地记录。已完成扫描的项目额外显示本次运行中上次扫描的大小、缓存量和时间，创建日期仍然保留；其他项目显示「未扫描」。
-3. 「保留成果，清理残留」保留根目录，明确缓存可用快捷按钮选中。构建产物、依赖、中间稿和脚本需要手动选择。默认使用文件树，项目根目录采用独立图标和“项目根目录”标签，首次展开根目录、内部目录收起；大小排序仅比较同级内容。也可切换平铺列表，根目录和内部文件分别显示，展示方式会保存。
-4. 点击文件行查看右侧详情，勾选框单独控制清理选择。详情提供系统 Quick Look、放大预览、Finder 定位和「始终保留」。Git 已跟踪文件、工具配置与技能（包括 `.agents/skills`）、保留项和包含这些内容的上层目录受到保护；取消个人保留不会解除系统保护。
-5. 「移除整个项目」仅在项目根目录显示清理勾选框，以整个所选文件夹为单位移入废纸篓，包括源码和作品。内部条目用于查看，并提示会随项目一起移入废纸篓。在同一项目的「关联记录」页另外勾选相关会话，然后与项目文件一起查看最终清单。
-6. 检查最终清单后执行，在「清理记录」查看每项结果。文件可恢复到原位置，遇到同名文件不会覆盖。
+## What you can do
 
-历史会话默认不备份，确认页需要单独确认可能无法恢复。移入废纸篓仍占用磁盘，应用不自动清空废纸篓，也不把移动量宣称为已释放空间。
+- Browse a project library, then scan one project in depth.
+- Keep finished work while removing selected leftovers, or move an entire project to Trash.
+- Inspect local Codex, Claude Code, and Cursor data within the supported formats below.
+- Manage Claude Code and Codex skills separately, including removing a shared skill's reference without deleting its original files.
+- Preview files with Quick Look, reveal them in Finder, and mark content to always keep.
+- Review cleanup results and restore files from Trash without overwriting existing files.
 
-项目概览分为「明确缓存、需人工检查、已保护」，点击只筛选、不自动勾选。可整组处理的缓存目录按一个单位统计，普通父目录不重复累计，文档包按整体统计；无法完整校验的内容单独提示。搜索、分类、排序、文件树和项目内标签切换保留勾选，底栏显示当前列表外的已选数量，并可切换「仅看已选」。切换项目、重新扫描、更换模式和撤销授权会清除过期选择。
+## Build and run
 
-文件树中，箭头只控制展开和收起，点击名称打开详情，勾选框单独控制清理。选中文件行后，可用左右方向键展开、收起或进入子级、返回上级，上下键浏览相邻可见行。搜索、分类和“仅看已选”保留匹配项的上级路径，辅助定位的祖先标为“所在目录”，不加入匹配数量或清理选择；清除筛选恢复原来的展开状态。同一项目重新扫描保留仍存在的展开路径，切换项目仅展开新根目录。
-
-深入扫描时显示当前步骤、已检查数量、路径和耗时。Git 保护规则在每次扫描中建立索引，遇到嵌套仓库和文档包时补充，避免逐文件遍历整份跟踪清单。完整扫描后才能勾选清理；取消不会留下可执行的部分结果。
-
-## 工具支持范围
-
-每个工具必须在项目的「关联记录」页或「工具数据」页面单独授权数据目录，也可选择自定义目录。项目归属来自本地记录中的明确路径，无法确认时保持只读或单独列出。
-
-工具卡片及关联记录分组显示 Codex、Claude、Cursor 的标识，图片随应用打包，离线可显示；文字名称和辅助功能标签继续保留。资源来源见 [工具标识来源](docs/tool-logo-sources.md)。
-
-| 工具 | 本机目录示例 | 首版支持情况 |
-| --- | --- | --- |
-| Codex | `~/.codex` | 只读检查 `threads` 元数据，运行时验证官方 `thread/delete` 能力。父会话与子会话作为关联组处理，删除通过官方接口。接口或数据格式不受支持时禁用。 |
-| Claude Code | `~/.claude` | 支持可明确关联的 UUID 会话 JSONL、版本 1 会话索引、历史索引及对应子代理/快照等目录。保留未选会话和项目记忆。旧版无法归属的代理、共享计划或未知格式保持只读。 |
-| Cursor | `~/Library/Application Support/Cursor` | 明确缓存和日志可清理；已知 Composer 元数据可只读列出。**会话删除始终禁用**，须安装实际版本并完成兼容性验收后开发启用。 |
-
-项目总目录和工具记录目录是独立的授权入口；例如桌面的 `Claude` 用来放项目，`~/.claude` 用来保存 Claude Code 本地记录。
-
-每个工具分别显示连接和检查状态；会话能否完整读取与能否删除单独表示。只有已连接工具全部完成会话检查时才会显示「未找到关联会话」。部分结果、取消、失败和未支持格式都不会被当成没有历史记录。
-
-执行工具数据清理前须完全退出对应工具，包括后台进程。清理程序不会替你关闭其他应用。Codex 可在「设置」指定命令行程序的完整路径。
-
-Claude 会话使用临时事务保存中断恢复所需的数据，成功后清除。若存在未完成事务，扫描会停止会话删除并提供「恢复未完成事务」入口；原位置发生冲突时不会覆盖。该机制不提供已成功删除会话的备份。
-
-认证信息、全局配置、插件、技能不在工具适配器的清理清单中。支持范围仅为本机；不会清理任何云端历史。
-
-## 技能管理（Skills）
-
-在侧栏打开「技能管理」，分别切换 **Claude Code** 和 **Codex**。进入页面即在后台自动检索本机的个人技能、共享目录和插件缓存，无需逐个选择默认目录；支持搜索、查看简介和完整路径、多选、仅看已选，以及统一确认清单。切换 AI 会清除之前的选择，避免把另一工具的技能带入清理。
-
-默认检索 `~/.claude/skills`、`~/.codex/skills`、`~/.agents/skills` 和两个工具的 `plugins/cache`。若应用运行环境指定了绝对路径的 `CLAUDE_CONFIG_DIR` 或 `CODEX_HOME`，也检查其技能与插件缓存位置。只检查这些固定位置，不搜索整个用户目录或所有项目；不存在的目录不会创建。刷新与重新进入页面会重新发现目录，自定义来源通过“技能来源 → 添加自定义目录”补充；同一来源不重复显示。无权限读取会提示具体位置，不计为成功的空结果。
-
-| 来源 | 目录示例 | 处理方式 |
-| --- | --- | --- |
-| 个人技能 | `~/.claude/skills`、`~/.codex/skills` | 明确选择后，将单个技能文件夹及其脚本、模板移入废纸篓 |
-| 项目技能 | `项目/.claude/skills` 等 | 单独授权对应 `skills` 目录，在专用页面选择；不改变项目整理的技能保护 |
-| 共享引用 | 个人 `skills` 目录中的符号链接 | **只移除当前 AI 的链接，保留目标原文件**；不读取或跟随目标，包括失效链接和相对链接 |
-| 共享原目录 | `~/.agents/skills`、项目 `.agents/skills` | 保持只读；Codex 直接读取这里，无法通过删除独立链接对其停用。请在原工具中管理 |
-| 插件、系统、同步技能 | `plugins` / `cache`、`.system`、`synced` | 只读展示，在原工具的插件或同步管理中停用；不直接删除插件缓存或系统技能 |
-
-技能归属按默认位置、自定义来源和明确路径区分，同名技能不会合并。共享关系只检查已连接目录，不代表确认了所有自定义加载位置或启用状态。发现另一来源使用原目录时禁止删除原文件；来源检查不完整时，原文件保持只读。执行前重新验证共享关系、授权目录身份、内容修改和占用状态。
-
-从「清理记录」可恢复技能文件夹及引用。恢复不覆盖同名项目，引用恢复保留原始链接文本；记录只保存操作定位信息，不保存 `SKILL.md` 正文。技能移除不改登录、会话、全局设置或插件配置；已经加载的技能可能要新建会话或重启工具才会消失。旧版记录继续可读，无需迁移。
-
-目录与管理行为参考：[Claude Code Skills](https://code.claude.com/docs/en/skills)、[Codex Skills](https://learn.chatgpt.com/docs/build-skills)。本版不自动修改 Codex 配置来停用共享原文件，也不实现整插件卸载。
-
-## 安全边界与数据保存
-
-- 项目扫描限于用户选择的根目录；技能扫描另外覆盖上述默认位置和手动添加的自定义目录。不跟随符号链接，不展示文档包内部清理项，不主动读取未下载的云端占位内容。文档包的元数据指纹用于执行前确认整体未变化。
-- 扫描可取消。执行前复核文件身份、所在范围、修改状态、Git 跟踪和占用情况；目录内容改变后要求重新扫描。
-- 「始终保留」规则也保护上层目录，防止通过整目录选择绕过保护。
-- 清理记录只保存路径、动作、状态、大小、时间和校验定位信息，不保存聊天正文。位置为 `~/Library/Application Support/ProjectSweep/operations.json`。
-- 文件夹书签、保留规则、Codex 路径、网格/列表和主题偏好保存在本地设置中；扫描摘要只留在内存。没有账号、遥测、后台自动清理或外部服务。本次更新不迁移清理记录存储格式。
-
-## 源码与构建
-
-依赖系统 Swift 6 工具链（Xcode 或相应 Command Line Tools）、AppKit、SwiftUI、CryptoKit 和系统 SQLite，无第三方包。
+Requirements: an Apple Silicon Mac running macOS 14 or later and a Swift 6 toolchain from Xcode or the corresponding Command Line Tools. The app uses SwiftUI, AppKit, Foundation, CryptoKit, and system SQLite, with no third-party Swift packages.
 
 ```sh
 git clone https://github.com/Oliverzheng0727/project-sweep.git
@@ -86,22 +30,141 @@ bash scripts/verify-ui-boundaries.sh
 bash scripts/build-app.sh
 ```
 
-`build-app.sh` 生成 arm64 Release 可执行文件、图标、Info.plist，并完成本地签名校验。产物位于 `dist/Project Sweep.app`，同时生成不携带 Finder/iCloud 扩展属性的 `dist/ProjectSweep-macOS-arm64.zip`。
+The build script creates:
 
-可选性能基准（另需 Python 3）：`bash scripts/benchmark-scan.sh`。脚本只生成并扫描临时项目，包含 2,000 个 Git 已跟踪源码文件及 8,000 个素材文件，结束后删除自己生成的测试目录，输出扫描耗时和清单摘要。可通过 `SWEEP_SCAN_BUDGET_SECONDS=10` 设置本机验收预算；默认不设通用硬件耗时门槛。
+- `dist/Project Sweep.app` — the arm64 Release app.
+- `dist/ProjectSweep-macOS-arm64.zip` — the packaged app, ready to extract into a local Applications folder.
 
-若需运行真实 Codex 协议验收，显式设置本机 CLI 路径；测试只在独立的临时 `CODEX_HOME` 创建和删除测试会话，不调用模型、不操作正常工具目录：
+Builds use a local ad hoc signature. They are not notarized or distributed through the Mac App Store. The script signs and packages the app in a separate temporary directory, avoiding Finder/iCloud attributes that a sync service may add to a workspace copy.
+
+## Project cleanup
+
+### Choose a project
+
+Add or drag in a folder that contains your projects, such as a `Claude` folder on your Desktop. The library lists only its immediate project folders; it does not recursively scan every project to populate the home screen.
+
+Grid and compact list views share search, sorting, and the current project selection. Dates come from each folder's **creation time**. Missing dates remain unknown rather than falling back to modification time or today's date. Double-click a project, or select it and press Return, to scan it in depth.
+
+After a complete scan, its card can show the size, cache total, and scan time from the current app run. These values are separate from the folder's creation date. Projects without a completed scan are marked as unscanned.
+
+### Choose a cleanup mode
+
+| Mode | Behavior |
+| --- | --- |
+| Keep results, clean up leftovers | Keep the project root. Clearly identified caches have a selection shortcut. Build outputs, dependencies, intermediate drafts, and scripts require manual selection. |
+| Remove the entire project | Move the selected project folder to Trash, including source files and finished work. Only the root has a cleanup checkbox; child entries are available for inspection and are included in the project removal. Existing scope and keep-rule checks still apply. |
+
+Associated local sessions are selected separately on the project's related-records page, then reviewed alongside project files in a single confirmation list.
+
+### Inspect the hierarchy
+
+Project files default to a tree. The root has a distinct project icon and label, starts expanded, and contains initially collapsed child folders. Size sorting applies within each sibling group. The optional flat view separates the entire project from its contents, and the app remembers the chosen view.
+
+The controls have separate roles:
+
+- Arrows expand or collapse folders.
+- File names open the detail pane.
+- Checkboxes select cleanup items.
+
+With a row focused, Left and Right collapse, expand, or navigate to a parent or child. Up and Down move between visible rows. Search, category filters, and selected-only mode retain the paths to matching files. Ancestors shown only for context have no cleanup checkbox and do not count as matches. Clearing filters restores the normal expansion state. Rescanning the same project retains existing expanded paths; switching projects expands only the new root.
+
+The overview separates clear caches, items requiring manual review, and protected content. Clicking a category filters without selecting anything. A cache directory that can be handled as a unit counts once; ordinary parent folders do not double-count their contents. Document packages count as units, and incomplete statistics are identified explicitly.
+
+Search, sorting, category changes, view changes, and project tab changes preserve cleanup selections. The footer shows selections outside the visible list. Switching projects, rescanning, changing cleanup modes, or revoking access clears outdated selections.
+
+### Preview, protect, and review
+
+The detail pane shows the path, size, classification reason, and protection information. Eligible local files support system Quick Look, an enlarged preview, Finder reveal, and an Always Keep action. Session details contain metadata and deletion impact rather than conversation content.
+
+In cleanup mode, Git-tracked files, tool configuration, skills including `.agents/skills`, keep-marked content, and folders containing protected items are protected. Removing a user keep rule does not remove system protection.
+
+Scans run in the background with progress, paths, elapsed time, and cancellation. Git protection is indexed per scan, with handling for nested repositories and document packages. Cleanup selection becomes available only after a complete scan; cancelled scans do not leave an executable partial plan.
+
+The workflow is **scan → select → review → execute → inspect results**. Files moved to Trash can be restored to their original locations without overwriting a same-name file. Moving files to Trash still uses disk space: the app does not empty Trash or report moved bytes as freed disk space.
+
+## AI tool support
+
+Authorize each tool's data directory independently on the tool-data page or the project's related-records page. Custom locations are supported. Project associations use explicit paths or tool metadata; uncertain associations remain read-only or appear separately.
+
+| Tool | Typical local directory | Current support |
+| --- | --- | --- |
+| Codex | `~/.codex` | Reads `threads` metadata and checks official `thread/delete` support at runtime. Parent and child sessions are handled as linked groups through the official interface. Deletion is disabled for unsupported interfaces or formats. |
+| Claude Code | `~/.claude` | Handles explicitly associated UUID session JSONL files, version 1 session indexes, history indexes, and corresponding subagent/snapshot directories. Unselected sessions and project memory are preserved. Unattributed legacy agents, shared plans, and unknown formats remain read-only. |
+| Cursor | `~/Library/Application Support/Cursor` | Can clean recognized caches and logs and list known Composer metadata read-only. **Session deletion is disabled.** Enabling it requires implementation and compatibility validation against an installed real version. |
+
+A project library and a tool's history directory are separate locations with separate access grants. For example, `Desktop/Claude` might hold your projects, while `~/.claude` holds Claude Code's local records.
+
+Connection status, scan completeness, and deletion capability are reported separately. A no-matching-sessions result requires completed session checks for all connected tools. Partial results, cancellation, failures, and unsupported formats are not reported as empty history.
+
+Quit the relevant tool, including background processes, before cleaning its data. Project Sweep does not quit other apps for you. The Codex executable's full path can be configured in Settings.
+
+**Session history is not backed up by default.** The review page requires separate acknowledgement that deletion may be irreversible. Claude cleanup uses temporary transaction data only to recover interrupted operations; successful completion removes it. An unfinished transaction blocks further session deletion and exposes a recovery action. Recovery does not overwrite conflicting files, and it is not a backup of successfully deleted sessions.
+
+Authentication, global configuration, plugins, and skills are excluded from the tool-data cleanup adapters. Tool history support is local only; cloud history is outside the app's scope. Tool logos are bundled for offline display alongside names and accessibility labels; see [logo sources](docs/tool-logo-sources.md).
+
+## Skills management
+
+Open Skills Management and switch between **Claude Code** and **Codex**. The page automatically discovers local personal skills, shared directories, and plugin caches in the background. Search, descriptions, full paths, multi-selection, selected-only filtering, and a unified review list are available. Switching tools clears the previous selection.
+
+Default discovery checks `~/.claude/skills`, `~/.codex/skills`, `~/.agents/skills`, and both tools' `plugins/cache` directories. Absolute `CLAUDE_CONFIG_DIR` or `CODEX_HOME` values in the app's environment add the corresponding skills and plugin-cache locations. Discovery checks these fixed locations without searching your entire home directory or all projects, and it does not create missing directories.
+
+Refreshing or reopening the page discovers added or removed sources. Other locations can be added through the custom-directory control. Duplicate sources are merged, and unreadable sources report their paths instead of appearing as successful empty results.
+
+| Source | Example | Behavior |
+| --- | --- | --- |
+| Personal skills | `~/.claude/skills`, `~/.codex/skills` | Move an explicitly selected skill folder, including its scripts and templates, to Trash. |
+| Project skills | `project/.claude/skills` | Authorize the corresponding `skills` folder separately and manage it on the dedicated page. Normal project cleanup still protects skills. |
+| Shared references | Symbolic links in a personal skills folder | **Remove only the current tool's link and preserve the target files.** The target is not read or followed, including for broken and relative links. |
+| Shared originals | `~/.agents/skills`, `project/.agents/skills` | Read-only. Codex can read these directly, so there may be no separate reference to remove for that tool. Manage them in the original tool. |
+| Plugin, system, and synced skills | `plugins` / `cache`, `.system`, `synced` | Read-only. Disable them in the original tool's plugin or sync settings; the app does not directly delete these caches or system skills. |
+
+Ownership uses the tool, source, and explicit path; same-name skills are not merged. Shared-reference checks cover connected sources rather than every possible custom loading location or activation state. An original directory stays protected if another source uses it or the relationship check is incomplete. Before execution, the app rechecks sharing, directory identity, access scope, content changes, and file use.
+
+Skill folders and references can be restored from cleanup records. Restoration preserves the original link text and never overwrites a same-name item. Records contain operation locations, not `SKILL.md` content. Skill removal does not change logins, sessions, global settings, or plugin configuration. A tool may need a new session or restart to stop using an already loaded skill. Existing cleanup records remain readable without migration.
+
+This version does not edit Codex configuration to disable shared originals or uninstall entire plugins. References: [Claude Code Skills](https://code.claude.com/docs/en/skills), [Codex Skills](https://learn.chatgpt.com/docs/build-skills).
+
+## Safety and local data
+
+- Project scans stay within the selected root. Skills discovery additionally covers the fixed and custom sources described above.
+- The scanner does not follow symbolic links, expose document-package internals as cleanup items, or intentionally read undownloaded cloud placeholders. Package metadata fingerprints help verify that a package has not changed before execution.
+- Execution rechecks file identity, scope, modifications, Git tracking, and file use. Changed directory contents require a new scan.
+- Always Keep also protects ancestor folders, preventing removal through a parent-folder selection.
+- Cleanup records store paths, actions, status, size, time, and verification metadata, not conversation text. They are stored at `~/Library/Application Support/ProjectSweep/operations.json`.
+- Folder bookmarks, keep rules, the Codex path, view preferences, and appearance are stored locally. Scan summaries live only in memory. There are no accounts, telemetry, automatic background cleanup, or external services.
+
+## Development and validation
+
+The core and UI checks are included in the build commands above. The current 0.3.2 acceptance record reports **92 passing core tests and 46 passing UI state checks**. Native interface checks used generated projects. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
+
+The actual Codex protocol test is optional and skipped unless you provide a local CLI path:
 
 ```sh
 PROJECT_SWEEP_TEST_CODEX=/absolute/path/to/codex swift test
 ```
 
-目录结构：`Sources/CleanupCore` 为扫描、规则、计划、执行及记录；`Sources/CleanupCore/Tools` 为独立工具适配器；`Sources/ProjectSweepApp` 为界面和文件夹授权；`Tests` 为隔离验收数据和回归检查。完整验收记录见 `docs/acceptance.md`。
+It creates and deletes test sessions only in a temporary, isolated `CODEX_HOME`, without calling a model or touching normal tool directories.
 
-协议与存储参考：[Codex 官方协议](https://github.com/openai/codex/blob/main/codex-rs/app-server/README.md)、[Claude Code 本地目录](https://code.claude.com/docs/en/claude-directory)、[Cursor 历史记录](https://docs.cursor.com/en/agent/chat/history)。这些格式可能更新，未知结构按只读处理。
+An optional performance benchmark requires Python 3:
 
-## 参与和许可
+```sh
+bash scripts/benchmark-scan.sh
+```
 
-欢迎通过 [Issues](https://github.com/Oliverzheng0727/project-sweep/issues) 反馈问题或提交 Pull Request。测试与提交说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。反馈时请使用生成的测试项目，并移除个人路径、会话正文及凭据。
+It generates and scans a temporary project with 2,000 Git-tracked source files and 8,000 asset files, reports timing and a manifest summary, and removes its own fixture afterward. Set `SWEEP_SCAN_BUDGET_SECONDS=10` to apply a local time budget; no universal hardware threshold is imposed by default.
 
-本项目源码采用 [MIT License](LICENSE)。Codex、Claude 和 Cursor 的名称与标识属于各自权利人，不属于本项目 MIT 授权范围；来源与说明见 [第三方资源说明](THIRD_PARTY_NOTICES.md)。Project Sweep 是独立项目，不代表这些工具的官方产品或合作关系。
+| Directory | Responsibility |
+| --- | --- |
+| `Sources/CleanupCore` | Scanning, rules, planning, execution, and operation records |
+| `Sources/CleanupCore/Tools` | Independent tool adapters |
+| `Sources/ProjectSweepApp` | Native interface and folder access |
+| `Tests` | Isolated fixtures and regression checks |
+| `scripts` | Build, verification, and benchmark commands |
+
+Protocol and storage references: [Codex app-server protocol](https://github.com/openai/codex/blob/main/codex-rs/app-server/README.md), [Claude Code local directory](https://code.claude.com/docs/en/claude-directory), [Cursor history](https://docs.cursor.com/en/agent/chat/history). Formats can change; unknown structures remain read-only.
+
+## Contributing and license
+
+Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for development and reporting guidance. Use generated fixtures and remove personal paths, conversation content, and credentials from reports.
+
+Project source code is licensed under the [MIT License](LICENSE). Codex, Claude, and Cursor names and logos belong to their respective owners and are outside this project's MIT grant; see [third-party notices](THIRD_PARTY_NOTICES.md). Project Sweep is an independent project and does not imply official affiliation or endorsement.

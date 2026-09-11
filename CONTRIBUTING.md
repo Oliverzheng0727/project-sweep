@@ -1,6 +1,8 @@
-# 参与开发
+# Contributing
 
-开发环境为 Apple Silicon Mac、macOS 14 或以上和 Swift 6 工具链。克隆后运行：
+**English** | [简体中文](CONTRIBUTING.zh-CN.md)
+
+Use an Apple Silicon Mac running macOS 14 or later with a Swift 6 toolchain. After cloning, run:
 
 ```sh
 swift build
@@ -9,14 +11,14 @@ bash scripts/verify-ui-boundaries.sh
 bash scripts/build-app.sh
 ```
 
-`swift test` 使用生成的隔离数据。实际 Codex 协议测试需要额外提供 `PROJECT_SWEEP_TEST_CODEX`，未配置时会跳过该项；详见 [README](README.md)。原生窗口操作的验收范围见 [验收记录](docs/acceptance.md)。
+Tests use generated, isolated data. The actual Codex protocol test requires `PROJECT_SWEEP_TEST_CODEX` and is skipped when it is not configured; see the [README](README.md). Native interface validation and its limitations are documented in the [acceptance record (Chinese)](docs/acceptance.md).
 
-## 问题反馈
+## Reporting issues
 
-请注明系统、应用和相关 AI 工具版本，给出能在生成项目上重现的步骤、预期行为和实际结果。截图与日志请先移除个人路径、项目名称、会话正文、凭据和登录信息，不要上传真实工具数据库。
+Include your macOS, Project Sweep, and relevant AI tool versions, steps that reproduce the issue in a generated project, expected behavior, and actual results. Remove personal paths, project names, conversation content, credentials, and login information from screenshots and logs. Do not upload real tool databases.
 
-## 提交修改
+## Submitting changes
 
-说明解决的问题、用户可见的变化以及完成的验证。修改扫描、选择、清理或恢复规则时，补充能验证数据边界的隔离回归；只使用自行生成的文件测试删除与恢复。
+Explain the problem, the user-visible change, and the verification performed. Changes to scanning, selection, cleanup, or restoration should include isolated regression coverage for data boundaries. Test deletion and restoration only with files you generated.
 
-请保留执行前复核、用户确认、系统保护与恢复不覆盖规则。无法明确归属或未验证的工具格式继续保持只读。Cursor 会话删除目前禁用，模拟测试不能代替实际工具版本的兼容性验收。
+Preserve pre-execution checks, explicit confirmation, system protection, and restoration without overwriting. Uncertain associations and unvalidated tool formats must remain read-only. Cursor session deletion is disabled; simulated tests cannot replace compatibility validation against an actual tool version.
