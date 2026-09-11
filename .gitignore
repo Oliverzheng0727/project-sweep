@@ -1,0 +1,16 @@
+.build/
+dist/
+.DS_Store
+.superpowers/
+*.xcuserstate
+xcuserdata/
+
+# Local credentials and diagnostic exports
+.env
+.env.*
+!.env.example
+*.p12
+*.pfx
+*.key
+*.mobileprovision
+*.log
