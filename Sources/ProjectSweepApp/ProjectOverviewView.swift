@@ -17,15 +17,16 @@ struct ProjectOverviewView: View {
                     } label: {
                         VStack(alignment: .leading, spacing: 5) {
                             HStack {
+                                Image(systemName: SweepPalette.riskIcon(risk)).foregroundStyle(SweepPalette.risk(risk)).accessibilityHidden(true)
                                 Text(risk == .review ? "需人工检查" : risk.title).font(.callout.weight(.medium))
                                 Spacer()
-                                if selected { Image(systemName: "checkmark.circle.fill") }
+                                if selected { Image(systemName: "checkmark.circle.fill").foregroundStyle(SweepPalette.accent) }
                             }
                             Text(state.filesScanned ? "\(metric.count) 项 · \(metric.incomplete ? "大小不完整" : SweepState.size(metric.bytes))" : state.projectScanActive ? "扫描完成后统计" : "尚未完成扫描")
                                 .font(.caption).foregroundStyle(.secondary)
                         }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                            .background(selected ? Color.teal.opacity(0.14) : Color.secondary.opacity(0.055), in: RoundedRectangle(cornerRadius: 10))
-                            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(selected ? Color.teal : Color.clear))
+                            .background(SweepPalette.risk(risk).opacity(0.065), in: RoundedRectangle(cornerRadius: 10))
+                            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(selected ? SweepPalette.accent : SweepPalette.border.opacity(0.35)))
                     }.buttonStyle(.plain).disabled(state.busy).accessibilityValue(selected ? "正在筛选" : "未筛选")
                 }
             }

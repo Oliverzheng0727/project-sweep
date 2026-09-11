@@ -104,13 +104,13 @@ struct ItemBrowser: View {
                 if filters.tree {
                     ForEach(tree.rows) { node in
                         ProjectFileRow(state: state, row: node, tree: true).tag(node.id)
-                            .listRowBackground(node.isRoot ? Color.accentColor.opacity(0.065) : Color.clear)
+                            .listRowBackground(node.isRoot ? SweepPalette.accent.opacity(0.065) : Color.clear)
                     }
                 } else {
                     if let root = tree.flatRoot {
                         Section("整个项目") {
                             ProjectFileRow(state: state, row: root, tree: false).tag(root.id)
-                                .listRowBackground(Color.accentColor.opacity(0.065))
+                                .listRowBackground(SweepPalette.accent.opacity(0.065))
                         }
                     }
                     if !tree.flatContents.isEmpty {
@@ -178,7 +178,7 @@ struct ItemBrowser: View {
                 .labelsHidden().toggleStyle(.checkbox).disabled(!item.isSelectable || state.busy)
                 .accessibilityLabel("清理选择：\(item.title)").help(item.isSelectable ? "勾选加入清理清单" : item.reason)
             Image(systemName: item.action == .deleteSession ? "bubble.left.and.bubble.right" : item.isDirectory ? "folder.fill" : "doc")
-                .foregroundStyle(.teal).frame(width: 22).accessibilityHidden(true)
+                .foregroundStyle(item.isDirectory ? .blue : SweepPalette.file(item.category)).frame(width: 22).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.title).font(.body.weight(.medium)).lineLimit(1)
                 Text(item.reason).font(.caption).foregroundStyle(.secondary).lineLimit(state.inspectorVisible ? 1 : 2)

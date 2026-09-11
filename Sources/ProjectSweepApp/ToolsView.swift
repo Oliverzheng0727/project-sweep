@@ -49,6 +49,8 @@ struct SweepSettingsView: View {
                     Text("浅色").tag("light")
                     Text("深色").tag("dark")
                 }.pickerStyle(.segmented)
+                Label("按钮和选中状态使用 macOS 强调色，可在系统设置 → 外观中更改。", systemImage: "paintpalette")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             Section("Codex 命令行") {
                 TextField("可执行文件完整路径", text: $state.codexExecutable, prompt: Text("使用系统默认路径"))

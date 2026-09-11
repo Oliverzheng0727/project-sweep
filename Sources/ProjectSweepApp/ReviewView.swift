@@ -7,7 +7,6 @@ struct ReviewView: View {
     @State private var acknowledged = false
     @State private var closedTools = false
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
     private var hasSessions: Bool { plan.items.contains { $0.action == .deleteSession } }
     private var hasTools: Bool { plan.items.contains { $0.tool != nil } }
     private var expanded: [CleanupItem] { plan.items.filter { !state.selected.contains($0.id) } }
@@ -60,7 +59,7 @@ struct ReviewView: View {
                 Button("返回检查") { dismiss() }.keyboardShortcut(.cancelAction)
                 Spacer()
                 Button(hasSessions ? "确认清理并永久删除会话" : "确认移入废纸篓", role: .destructive) { state.execute(plan) }
-                    .buttonStyle(.borderedProminent).tint(hasSessions ? .red : SweepPalette.accent(for: colorScheme))
+                    .buttonStyle(.borderedProminent).tint(hasSessions ? .red : SweepPalette.accent)
                     .disabled((hasSessions && !acknowledged) || (hasTools && !closedTools))
             }
         }.padding(28).frame(width: 680, height: sheetHeight)

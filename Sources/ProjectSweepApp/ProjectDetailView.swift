@@ -15,7 +15,7 @@ struct ProjectDetailView: View {
                 Button("重新深入扫描", systemImage: "arrow.clockwise", action: state.scanProject).disabled(state.busy)
             }
             HStack(alignment: .top, spacing: 17) {
-                Image(systemName: "folder.fill").font(.system(size: 42, weight: .light)).foregroundStyle(.teal).accessibilityHidden(true)
+                Image(systemName: "square.stack.3d.up.fill").font(.system(size: 42, weight: .light)).foregroundStyle(SweepPalette.accent).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 6) {
                     Text(root.lastPathComponent).font(.largeTitle.weight(.semibold))
                     Text(root.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled).lineLimit(1).truncationMode(.middle)
@@ -28,8 +28,8 @@ struct ProjectDetailView: View {
                 }
             }
             HStack(spacing: 12) {
-                ProjectModeCard(title: "保留成果，清理残留", subtitle: "查看缓存、制作过程文件和关联记录", icon: "slider.horizontal.3", selected: state.mode == .organize) { state.mode = .organize }
-                ProjectModeCard(title: "移除整个项目", subtitle: "项目放入废纸篓，关联记录单独勾选", icon: "trash", selected: state.mode == .remove) { state.mode = .remove }
+                ProjectModeCard(title: "保留成果，清理残留", subtitle: "查看缓存、制作过程文件和关联记录", icon: "slider.horizontal.3", symbolColor: SweepPalette.accent, selected: state.mode == .organize) { state.mode = .organize }
+                ProjectModeCard(title: "移除整个项目", subtitle: "项目放入废纸篓，关联记录单独勾选", icon: "trash", symbolColor: .orange, selected: state.mode == .remove) { state.mode = .remove }
             }.disabled(state.busy)
             HStack {
                 Picker("项目内容", selection: $state.projectTab) {
@@ -55,21 +55,22 @@ private struct ProjectModeCard: View {
     let title: String
     let subtitle: String
     let icon: String
+    let symbolColor: Color
     let selected: Bool
     let action: () -> Void
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                Image(systemName: icon).font(.title3).foregroundStyle(selected ? .teal : .secondary)
+                Image(systemName: icon).font(.title3).foregroundStyle(symbolColor)
                 VStack(alignment: .leading, spacing: 5) {
                     Text(title).font(.callout.weight(.semibold))
                     Text(subtitle).font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
-                Image(systemName: selected ? "largecircle.fill.circle" : "circle").foregroundStyle(selected ? .teal : .secondary)
+                Image(systemName: selected ? "largecircle.fill.circle" : "circle").foregroundStyle(selected ? SweepPalette.accent : .secondary)
             }.padding(14).frame(maxWidth: .infinity, alignment: .leading)
-                .background(selected ? Color.teal.opacity(0.08) : Color.secondary.opacity(0.045), in: RoundedRectangle(cornerRadius: 12))
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(selected ? Color.teal.opacity(0.4) : Color.clear))
+                .background(selected ? SweepPalette.accent.opacity(0.08) : SweepPalette.surface, in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(selected ? SweepPalette.accent.opacity(0.6) : SweepPalette.border.opacity(0.35)))
         }.buttonStyle(.plain).accessibilityLabel(title).accessibilityValue(selected ? "已选择" : "未选择")
     }
 }

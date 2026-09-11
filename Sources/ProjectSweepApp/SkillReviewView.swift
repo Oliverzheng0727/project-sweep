@@ -5,13 +5,12 @@ struct SkillReviewView: View {
     let plan: SkillRemovalPlan
     let execute: (SkillRemovalPlan) -> Void
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text("确认移除技能").font(.title.weight(.semibold))
             Text("\(plan.entries.count) 项 · 移入废纸篓 \(SweepState.size(plan.bytes))").foregroundStyle(.secondary)
             Label("共享引用只移除链接，原文件保留。", systemImage: "link")
-                .foregroundStyle(SweepPalette.accent(for: colorScheme))
+                .foregroundStyle(SweepPalette.accent)
             List(plan.entries) { entry in
                 VStack(alignment: .leading, spacing: 7) {
                     HStack {
@@ -33,6 +32,5 @@ struct SkillReviewView: View {
                 Button("确认移入废纸篓", role: .destructive) { dismiss(); execute(plan) }.buttonStyle(.borderedProminent)
             }
         }.padding(26).frame(width: 680, height: min(650, 300 + CGFloat(plan.entries.count) * 155))
-            .tint(SweepPalette.accent(for: colorScheme))
     }
 }

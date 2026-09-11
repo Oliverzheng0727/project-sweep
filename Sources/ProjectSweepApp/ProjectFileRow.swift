@@ -27,7 +27,8 @@ struct ProjectFileRow: View {
                     .help(row.item.isSelectable ? "勾选加入清理清单" : row.item.reason)
             } else { Color.clear.frame(width: 18, height: 1).accessibilityHidden(true) }
             Image(systemName: row.icon).font(.system(size: row.isRoot ? 22 : 17))
-                .foregroundStyle(Color.accentColor).frame(width: 24).accessibilityHidden(true)
+                .foregroundStyle(row.isRoot ? SweepPalette.accent : row.item.isDirectory ? .blue : SweepPalette.file(row.item.category))
+                .frame(width: 24).accessibilityHidden(true)
             Button { state.inspect(row.item) } label: {
                 VStack(alignment: .leading, spacing: 5) {
                     HStack(spacing: 7) {
@@ -62,6 +63,6 @@ struct ProjectFileRow: View {
     private func badge(_ title: String) -> some View {
         Text(title).font(.caption2.weight(.medium)).fixedSize()
             .padding(.horizontal, 6).padding(.vertical, 3)
-            .background(Color.accentColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 4))
+            .background(SweepPalette.accent.opacity(0.10), in: RoundedRectangle(cornerRadius: 4))
     }
 }

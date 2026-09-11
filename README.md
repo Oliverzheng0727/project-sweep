@@ -6,7 +6,7 @@ A native macOS app for cleaning up AI-assisted projects, local tool data, and sk
 
 Project Sweep runs locally. It does not connect to an AI service, require an API key, or download a model. It supports code, documents, presentations, images, video, and mixed projects.
 
-**Version:** 0.3.2 · **Platform:** Apple Silicon, macOS 14+ · **App interface:** Simplified Chinese
+**Version:** 0.3.3 · **Platform:** Apple Silicon, macOS 14+ · **App interface:** Simplified Chinese
 
 ## What you can do
 
@@ -36,6 +36,12 @@ The build script creates:
 - `dist/ProjectSweep-macOS-arm64.zip` — the packaged app, ready to extract into a local Applications folder.
 
 Builds use a local ad hoc signature. They are not notarized or distributed through the Mac App Store. The script signs and packages the app in a separate temporary directory, avoiding Finder/iCloud attributes that a sync service may add to a workspace copy.
+
+## Appearance
+
+The default appearance follows macOS light and dark modes. Controls, selections, and project highlights use the system accent color, which you can change in System Settings → Appearance. Settings also lets you choose a fixed light or dark appearance.
+
+Project cards use the native system folder image, adaptive surfaces, and subtle borders. Sidebar sections and scan categories have distinct semantic colors: green for clear caches and completed operations, orange for manual review and warnings, and purple for protected content. Labels and icons convey these meanings alongside color.
 
 ## Project cleanup
 

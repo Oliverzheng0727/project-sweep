@@ -37,8 +37,8 @@ struct SkillsView: View {
                             Text(tool.title).font(.headline)
                             Text(state.countLabel(for: tool)).font(.caption).foregroundStyle(.secondary).monospacedDigit()
                         }.frame(maxWidth: .infinity).padding(.vertical, 10)
-                            .background(state.tool == tool ? Color.accentColor.opacity(0.10) : Color.secondary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
-                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(state.tool == tool ? Color.accentColor : .clear))
+                            .background(state.tool == tool ? SweepPalette.accent.opacity(0.10) : Color.secondary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(state.tool == tool ? SweepPalette.accent : .clear))
                     }.buttonStyle(.plain).accessibilityLabel("\(tool.title) 技能")
                         .accessibilityAddTraits(state.tool == tool ? .isSelected : [])
                 }
@@ -111,7 +111,7 @@ struct SkillsView: View {
                                 }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
                             }.buttonStyle(.plain).accessibilityLabel("查看 \(entry.name) 的来源与影响")
                         }.padding(.vertical, 7)
-                            .listRowBackground(state.inspectedID == entry.id ? Color.accentColor.opacity(0.07) : Color.clear)
+                            .listRowBackground(state.inspectedID == entry.id ? SweepPalette.accent.opacity(0.07) : Color.clear)
                     }.listStyle(.inset).frame(minHeight: 0, maxHeight: .infinity)
                     if let entry = state.inspected {
                         Divider()

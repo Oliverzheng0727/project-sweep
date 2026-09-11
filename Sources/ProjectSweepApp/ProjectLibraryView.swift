@@ -37,7 +37,7 @@ struct ProjectLibraryView: View {
             }
             if let library = state.libraryRoot {
                 HStack(spacing: 14) {
-                    Image(systemName: "folder.fill").font(.title2).foregroundStyle(.teal)
+                    ProjectFolderIcon(size: 30)
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
                             Text(library.lastPathComponent).font(.headline)
@@ -48,7 +48,7 @@ struct ProjectLibraryView: View {
                     Spacer()
                     Text("\(state.catalog?.projects.count ?? 0) 个项目").foregroundStyle(.secondary)
                     Button("刷新", systemImage: "arrow.clockwise", action: state.loadLibrary).disabled(state.busy)
-                }.padding(16).background(.teal.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+                }.padding(16).background(SweepPalette.accent.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
                 HStack {
                     TextField("搜索项目名称", text: $state.librarySearch).textFieldStyle(.roundedBorder)
                     Toggle("按创建时间", isOn: $state.libraryNewestFirst).toggleStyle(.button)
@@ -95,14 +95,15 @@ struct ProjectLibraryView: View {
                         if let project = selectedProject { state.openProject(project) }
                     }.buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.return, modifiers: [])
                         .disabled(selectedProject?.isAvailable != true || state.busy)
-                }.padding(18).background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 14))
+                }.padding(18).background(SweepPalette.surface, in: RoundedRectangle(cornerRadius: 14))
+                    .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(SweepPalette.border.opacity(0.4), lineWidth: 0.5))
             } else {
                 VStack(spacing: 20) {
                     HStack(spacing: 18) {
-                        Image(systemName: "folder.fill").rotationEffect(.degrees(-9)).opacity(0.4)
-                        Image(systemName: "folder.fill")
-                        Image(systemName: "folder.fill").rotationEffect(.degrees(9)).opacity(0.4)
-                    }.font(.system(size: 64, weight: .light)).foregroundStyle(.teal).accessibilityHidden(true)
+                        ProjectFolderIcon(size: 64).rotationEffect(.degrees(-9)).opacity(0.4)
+                        ProjectFolderIcon(size: 64)
+                        ProjectFolderIcon(size: 64).rotationEffect(.degrees(9)).opacity(0.4)
+                    }.accessibilityHidden(true)
                     Text("先把项目总目录加进来").font(.title2.weight(.semibold))
                     Text("例如：Claude 文件夹中存放了「个人简历」「分镜图」「文献梳理」等项目。\n添加 Claude 文件夹后，就可以在这里逐个选择项目。")
                         .foregroundStyle(.secondary).multilineTextAlignment(.center).lineSpacing(6)
@@ -111,8 +112,8 @@ struct ProjectLibraryView: View {
                     Button("只处理一个项目？直接打开…", action: state.chooseProject).buttonStyle(.plain).foregroundStyle(.secondary)
                     Text("也可以把项目总目录拖到这里").font(.caption).foregroundStyle(.tertiary)
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(.teal.opacity(0.035), in: RoundedRectangle(cornerRadius: 20))
-                    .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(.teal.opacity(0.15), style: StrokeStyle(lineWidth: 1, dash: [7])))
+                    .background(SweepPalette.surface, in: RoundedRectangle(cornerRadius: 20))
+                    .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(SweepPalette.border, style: StrokeStyle(lineWidth: 1, dash: [7])))
             }
         }.padding(28)
             .onChange(of: state.libraryRoot) { state.librarySelection = nil; state.librarySearch = "" }
@@ -123,7 +124,7 @@ struct ProjectLibraryView: View {
     }
     private func libraryRow(_ project: ProjectDirectory) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: "folder.fill").font(.title2).foregroundStyle(project.isAvailable ? .teal : .secondary)
+            ProjectFolderIcon(size: 30, available: project.isAvailable)
             VStack(alignment: .leading, spacing: 4) {
                 Text(project.title).font(.body.weight(.medium))
                 Text("创建：\(project.createdAt?.formatted(date: .abbreviated, time: .omitted) ?? "未知")")

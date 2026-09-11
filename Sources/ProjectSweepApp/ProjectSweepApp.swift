@@ -9,7 +9,6 @@ struct ProjectSweepApp: App {
         WindowGroup("项目清理") {
             SweepView(state: state)
                 .frame(minWidth: 960, minHeight: 680)
-                .tint(.teal)
                 .preferredColorScheme(appearance == "light" ? .light : appearance == "dark" ? .dark : nil)
                 .onAppear { NSApp.setActivationPolicy(.regular); NSApp.activate(ignoringOtherApps: true) }
         }

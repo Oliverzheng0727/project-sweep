@@ -41,7 +41,8 @@ struct ToolConnectionStatusView: View {
                 if connected { Button("断开") { state.disconnectTool(tool) }.accessibilityLabel("断开 \(tool.title)") }
             }.controlSize(.small).disabled(state.busy || state.executing)
         }.padding(10).frame(maxWidth: .infinity, alignment: .topLeading)
-            .background(.teal.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+            .background(SweepPalette.surface, in: RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(SweepPalette.border.opacity(0.4), lineWidth: 0.5))
             .accessibilityElement(children: .contain)
     }
 }

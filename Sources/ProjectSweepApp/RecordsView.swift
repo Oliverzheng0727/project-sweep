@@ -27,8 +27,8 @@ struct RecordsView: View {
             } else {
                 List(state.records) { record in
                     HStack(alignment: .top, spacing: 14) {
-                        Image(systemName: record.status == .failed ? "exclamationmark.circle" : "checkmark.circle")
-                            .foregroundStyle(record.status == .failed ? .orange : .teal).padding(.top, 3).accessibilityHidden(true)
+                        Image(systemName: recordIcon(record.status))
+                            .foregroundStyle(recordColor(record.status)).padding(.top, 3).accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
                                 Text(URL(fileURLWithPath: record.originalPath).lastPathComponent).font(.headline)
@@ -58,5 +58,23 @@ struct RecordsView: View {
                 }.listStyle(.inset)
             }
         }.padding(28).task { await state.loadRecords() }
+    }
+
+    private func recordIcon(_ status: CleanupStatus) -> String {
+        switch status {
+        case .succeeded: "checkmark.circle"
+        case .restored: "arrow.uturn.backward.circle"
+        case .skipped: "minus.circle"
+        case .failed: "exclamationmark.circle"
+        }
+    }
+
+    private func recordColor(_ status: CleanupStatus) -> Color {
+        switch status {
+        case .succeeded: .green
+        case .restored: .blue
+        case .skipped: .secondary
+        case .failed: .red
+        }
     }
 }
