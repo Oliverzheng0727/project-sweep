@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Show Swift toolchain
         run: swift --version
@@ -38,7 +38,7 @@ jobs:
         run: codesign --verify --deep --strict "dist/Project Sweep.app"
 
       - name: Upload app archive
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ProjectSweep-macOS-arm64
           path: dist/ProjectSweep-macOS-arm64.zip
