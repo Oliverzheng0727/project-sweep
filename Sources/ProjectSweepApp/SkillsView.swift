@@ -15,7 +15,7 @@ struct SkillsView: View {
         .sheet(item: $state.review) { SkillReviewView(plan: $0, execute: execute) }
         .alert("无法完成技能操作", isPresented: Binding(get: { state.error != nil }, set: { if !$0 { state.error = nil } })) {
             Button("好") { state.error = nil }
-        } message: { Text(state.error ?? "") }
+        } message: { Text(AppText.string(state.error ?? "")) }
     }
 
     private var content: some View {
@@ -35,11 +35,11 @@ struct SkillsView: View {
                         HStack(spacing: 10) {
                             ToolLogo(tool: tool, size: 28)
                             Text(tool.title).font(.headline)
-                            Text(state.countLabel(for: tool)).font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                            Text(AppText.string(state.countLabel(for: tool))).font(.caption).foregroundStyle(.secondary).monospacedDigit()
                         }.frame(maxWidth: .infinity).padding(.vertical, 10)
                             .background(state.tool == tool ? SweepPalette.accent.opacity(0.10) : Color.secondary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
                             .overlay(RoundedRectangle(cornerRadius: 10).stroke(state.tool == tool ? SweepPalette.accent : .clear))
-                    }.buttonStyle(.plain).accessibilityLabel("\(tool.title) 技能")
+                    }.buttonStyle(.plain).accessibilityLabel(AppText.format("%@ 技能", tool.title))
                         .accessibilityAddTraits(state.tool == tool ? .isSelected : [])
                 }
             }
@@ -47,21 +47,24 @@ struct SkillsView: View {
                 VStack(alignment: .leading, spacing: 9) {
                     ForEach(state.toolRoots) { root in
                         HStack(spacing: 10) {
-                            Text(root.location.title).font(.caption.weight(.medium))
+                            Text(AppText.string(root.location.title)).font(.caption.weight(.medium))
                             if state.isAutomatic(root) { Text("自动发现").font(.caption2).foregroundStyle(.secondary) }
                             Text(root.url.path).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle).help(root.url.path)
                             Spacer()
                             if !state.isAutomatic(root) {
                                 Button("断开") { state.disconnect(root) }.buttonStyle(.borderless).disabled(state.scanning)
-                                    .accessibilityLabel("断开自定义来源 \(root.url.path)")
+                                    .accessibilityLabel(AppText.format("断开自定义来源 %@", root.url.path))
                             }
                         }
                     }
-                    if state.toolRoots.isEmpty { Text(state.scanning ? "正在检索默认位置…" : "未在默认位置发现 \(state.tool.title) 的技能目录。").font(.callout).foregroundStyle(.secondary) }
+                    if state.toolRoots.isEmpty {
+                        Text(state.scanning ? AppText.string("正在检索默认位置…") : AppText.format("未在默认位置发现 %@ 的技能目录。", state.tool.title))
+                            .font(.callout).foregroundStyle(.secondary)
+                    }
                     HStack {
                         Menu("添加自定义目录", systemImage: "folder.badge.plus") {
                             ForEach(SkillLocation.allCases, id: \.self) { location in
-                                Button("\(location.title)…") { state.choose(location) }
+                                Button(AppText.format("%@…", AppText.string(location.title))) { state.choose(location) }
                             }
                         }.fixedSize().disabled(state.scanning)
                         Text("默认目录自动读取；插件、系统及共享原文件保持只读。")
@@ -72,11 +75,12 @@ struct SkillsView: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }.padding(.top, 10)
-            } label: { Text("技能来源 · \(state.toolRoots.count) 个目录").font(.callout.weight(.medium)) }
+            } label: { Text(AppText.format("技能来源 · %lld 个目录", Int64(state.toolRoots.count))).font(.callout.weight(.medium)) }
 
             if !state.warnings.isEmpty {
-                Label(state.warnings.prefix(2).joined(separator: "\n") + (state.warnings.count > 2 ? "\n另有 \(state.warnings.count - 2) 项提示" : ""), systemImage: "exclamationmark.triangle")
-                    .font(.caption).foregroundStyle(.orange).lineLimit(4).help(state.warnings.joined(separator: "\n"))
+                Label(state.warnings.prefix(2).map(AppText.string).joined(separator: "\n")
+                      + (state.warnings.count > 2 ? "\n" + AppText.format("另有 %lld 项提示", Int64(state.warnings.count - 2)) : ""), systemImage: "exclamationmark.triangle")
+                    .font(.caption).foregroundStyle(.orange).lineLimit(4).help(state.warnings.map(AppText.string).joined(separator: "\n"))
             }
             HStack {
                 TextField("搜索技能、简介或路径", text: $state.search).textFieldStyle(.roundedBorder)
@@ -86,18 +90,18 @@ struct SkillsView: View {
                     .help("只选择当前列表中可移除的技能，保留已有选择")
             }
             if state.scanning {
-                VStack(spacing: 14) { ProgressView(); Text(state.status).foregroundStyle(.secondary); Button("取消扫描", action: state.cancel) }
+                VStack(spacing: 14) { ProgressView(); Text(AppText.string(state.status)).foregroundStyle(.secondary); Button("取消扫描", action: state.cancel) }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if state.visible.isEmpty {
-                ContentUnavailableView(state.toolRoots.isEmpty ? "未发现技能目录" : "没有可显示的技能", systemImage: "puzzlepiece.extension",
-                    description: Text(state.toolRoots.isEmpty ? "已检查默认位置。若技能保存在其他地方，可展开“技能来源”添加自定义目录。" : "检查搜索条件，或点击重新扫描。只识别 SKILL.md 技能目录和直接引用。"))
+                ContentUnavailableView(AppText.string(state.toolRoots.isEmpty ? "未发现技能目录" : "没有可显示的技能"), systemImage: "puzzlepiece.extension",
+                    description: Text(AppText.string(state.toolRoots.isEmpty ? "已检查默认位置。若技能保存在其他地方，可展开“技能来源”添加自定义目录。" : "检查搜索条件，或点击重新扫描。只识别 SKILL.md 技能目录和直接引用。")))
             } else {
                 HStack(alignment: .top, spacing: 0) {
                     List(state.visible) { entry in
                         HStack(alignment: .top, spacing: 10) {
-                            Toggle("选择 \(entry.name)", isOn: Binding(get: { state.selected.contains(entry.id) }, set: { _ in state.toggle(entry) }))
+                            Toggle(AppText.format("选择 %@", entry.name), isOn: Binding(get: { state.selected.contains(entry.id) }, set: { _ in state.toggle(entry) }))
                                 .labelsHidden().toggleStyle(.checkbox).disabled(!entry.selectable).padding(.top, 3)
-                                .accessibilityLabel("选择 \(state.tool.title) 技能 \(entry.name)")
+                                .accessibilityLabel(AppText.format("选择 %@ 技能 %@", state.tool.title, entry.name))
                             Button { state.inspectedID = entry.id } label: {
                                 VStack(alignment: .leading, spacing: 5) {
                                     HStack {
@@ -106,10 +110,10 @@ struct SkillsView: View {
                                         Image(systemName: entry.removal == .readOnly ? "lock" : entry.removal == .reference ? "link" : "folder")
                                             .foregroundStyle(.secondary).accessibilityHidden(true)
                                     }
-                                    Text("\(entry.source) · \(entry.removal.title)").font(.caption).foregroundStyle(.secondary)
+                                    Text(AppText.string(entry.source) + " · " + AppText.string(entry.removal.title)).font(.caption).foregroundStyle(.secondary)
                                     Text(entry.summary.isEmpty ? entry.url.lastPathComponent : entry.summary).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                                 }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
-                            }.buttonStyle(.plain).accessibilityLabel("查看 \(entry.name) 的来源与影响")
+                            }.buttonStyle(.plain).accessibilityLabel(AppText.format("查看 %@ 的来源与影响", entry.name))
                         }.padding(.vertical, 7)
                             .listRowBackground(state.inspectedID == entry.id ? SweepPalette.accent.opacity(0.07) : Color.clear)
                     }.listStyle(.inset).frame(minHeight: 0, maxHeight: .infinity)
@@ -122,8 +126,10 @@ struct SkillsView: View {
             Divider()
             HStack {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("已选 \(state.selected.count) 项 · \(SweepState.size(state.selectedBytes))").font(.callout.weight(.medium))
-                    Text(state.hiddenSelectionCount > 0 ? "其中 \(state.hiddenSelectionCount) 项不在当前列表中" : state.status).font(.caption).foregroundStyle(.secondary)
+                    Text(AppText.format("已选 %lld 项", Int64(state.selected.count)) + " · " + SweepState.size(state.selectedBytes)).font(.callout.weight(.medium))
+                    Text(state.hiddenSelectionCount > 0
+                         ? AppText.format("其中 %lld 项不在当前列表中", Int64(state.hiddenSelectionCount))
+                         : AppText.string(state.status)).font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
                 if !state.selected.isEmpty { Button("取消选择") { state.selected = [] } }

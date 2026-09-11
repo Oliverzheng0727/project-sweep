@@ -68,8 +68,9 @@ final class SkillManagementState: ObservableObject {
             : tool.defaultRoot.appendingPathComponent(location == .plugins ? "plugins" : "skills")
         let panel = NSOpenPanel(); panel.canChooseDirectories = true; panel.canChooseFiles = false
         panel.allowsMultipleSelection = false; panel.showsHiddenFiles = true; panel.directoryURL = initial
-        panel.message = location == .plugins ? "连接 \(tool.title) 的插件目录，仅查看技能来源。"
-            : "连接 \(tool.title) 的\(location.title)：请选择包含各技能文件夹的 skills 目录。"
+        panel.message = location == .plugins
+            ? AppText.format("连接 %@ 的插件目录，仅查看技能来源。", tool.title)
+            : AppText.format("连接 %@ 的%@：请选择包含各技能文件夹的 skills 目录。", tool.title, AppText.string(location.title))
         guard panel.runModal() == .OK, let url = panel.url else { return }
         connect(url, tool: tool, location: location)
     }

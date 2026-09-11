@@ -28,13 +28,13 @@ struct ItemBrowser: View {
                 Menu {
                     Picker("文件分类", selection: binding(\.category)) {
                         Text("全部分类").tag(Optional<CleanupCategory>.none)
-                        ForEach(CleanupCategory.allCases) { Text($0.title).tag(Optional($0)) }
+                        ForEach(CleanupCategory.allCases) { Text(AppText.string($0.title)).tag(Optional($0)) }
                     }
                     Picker("判断状态", selection: binding(\.risk)) {
                         Text("全部状态").tag(Optional<CleanupRisk>.none)
-                        ForEach([CleanupRisk.recommended, .review, .protected, .unavailable], id: \.self) { Text($0.title).tag(Optional($0)) }
+                        ForEach([CleanupRisk.recommended, .review, .protected, .unavailable], id: \.self) { Text(AppText.string($0.title)).tag(Optional($0)) }
                     }
-                } label: { Label(filters.category?.title ?? filters.risk?.title ?? "筛选", systemImage: "line.3.horizontal.decrease") }
+                } label: { Label(AppText.string(filters.category?.title ?? filters.risk?.title ?? "筛选"), systemImage: "line.3.horizontal.decrease") }
                     .fixedSize()
                 if !toolMode {
                     Picker("文件展示方式", selection: binding(\.tree)) {
@@ -46,9 +46,9 @@ struct ItemBrowser: View {
                 Toggle("仅看已选", isOn: binding(\.onlySelected)).toggleStyle(.button)
             }.fixedSize(horizontal: false, vertical: true)
             if !state.warnings.isEmpty {
-                DisclosureGroup("\(state.warnings.count) 条扫描提示") {
+                DisclosureGroup(AppText.format("%lld 条扫描提示", Int64(state.warnings.count))) {
                     ScrollView { VStack(alignment: .leading, spacing: 5) {
-                        ForEach(Array(state.warnings.enumerated()), id: \.offset) { _, warning in Text(warning).frame(maxWidth: .infinity, alignment: .leading) }
+                        ForEach(Array(state.warnings.enumerated()), id: \.offset) { _, warning in Text(AppText.string(warning)).frame(maxWidth: .infinity, alignment: .leading) }
                     } }.frame(maxHeight: 90)
                 }.font(.caption).foregroundStyle(.orange)
             }
@@ -61,11 +61,11 @@ struct ItemBrowser: View {
             }.frame(minHeight: 0, maxHeight: .infinity, alignment: .top)
             VStack(spacing: 6) {
                 HStack {
-                    Text("已选 \(state.selected.count) 项").font(.callout.weight(.medium))
-                    if hiddenSelected > 0 { Text("其中 \(hiddenSelected) 项在当前列表外").font(.caption).foregroundStyle(.secondary) }
+                    Text(AppText.format("已选 %lld 项", Int64(state.selected.count))).font(.callout.weight(.medium))
+                    if hiddenSelected > 0 { Text(AppText.format("其中 %lld 项在当前列表外", Int64(hiddenSelected))).font(.caption).foregroundStyle(.secondary) }
                     Spacer()
                     if scope == .projectFiles {
-                        Text(filters.hasQuery ? "匹配 \(matches.count) 项 · 所在目录不计入匹配" : "大小含下级内容，不重复累计")
+                        Text(filters.hasQuery ? AppText.format("匹配 %lld 项 · 所在目录不计入匹配", Int64(matches.count)) : AppText.string("大小含下级内容，不重复累计"))
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
@@ -87,7 +87,7 @@ struct ItemBrowser: View {
             if value != state.inspectedID, let item = state.items.first(where: { $0.id == value }) { state.inspect(item) }
         })) {
             if toolMode {
-                let groups = Dictionary(grouping: filtered) { "\($0.tool?.title ?? "工具") · \($0.projectPath ?? "未关联项目")" }
+                let groups = Dictionary(grouping: filtered) { "\($0.tool?.title ?? AppText.string("工具")) · \($0.projectPath ?? AppText.string("未关联项目"))" }
                 ForEach(groups.keys.sorted(), id: \.self) { group in
                     Section {
                         ForEach(groups[group] ?? []) { row($0).tag($0.id) }
@@ -150,7 +150,7 @@ struct ItemBrowser: View {
                 ProjectScanProgressView(progress: state.projectScanProgress, stageTitle: state.projectScanStageTitle,
                     startedAt: state.projectScanStartedAt)
             } else if filtered.isEmpty && !state.busy {
-                ContentUnavailableView(emptyTitle, systemImage: "tray", description: Text(emptyMessage))
+                ContentUnavailableView(AppText.string(emptyTitle), systemImage: "tray", description: Text(AppText.string(emptyMessage)))
             }
         }.background(.background, in: RoundedRectangle(cornerRadius: 10))
         }
@@ -174,26 +174,26 @@ struct ItemBrowser: View {
     }
     private func row(_ item: CleanupItem) -> some View {
         HStack(spacing: 9) {
-            Toggle("选择 \(item.title)", isOn: Binding(get: { state.selected.contains(item.id) }, set: { _ in state.toggle(item) }))
+            Toggle(AppText.format("选择 %@", item.title), isOn: Binding(get: { state.selected.contains(item.id) }, set: { _ in state.toggle(item) }))
                 .labelsHidden().toggleStyle(.checkbox).disabled(!item.isSelectable || state.busy)
-                .accessibilityLabel("清理选择：\(item.title)").help(item.isSelectable ? "勾选加入清理清单" : item.reason)
+                .accessibilityLabel(AppText.format("清理选择：%@", item.title)).help(item.isSelectable ? AppText.string("勾选加入清理清单") : AppText.string(item.reason))
             Image(systemName: item.action == .deleteSession ? "bubble.left.and.bubble.right" : item.isDirectory ? "folder.fill" : "doc")
                 .foregroundStyle(item.isDirectory ? .blue : SweepPalette.file(item.category)).frame(width: 22).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.title).font(.body.weight(.medium)).lineLimit(1)
-                Text(item.reason).font(.caption).foregroundStyle(.secondary).lineLimit(state.inspectorVisible ? 1 : 2)
+                Text(AppText.string(item.reason)).font(.caption).foregroundStyle(.secondary).lineLimit(state.inspectorVisible ? 1 : 2)
                 if item.category == .session, let modified = item.modifiedAt {
-                    Text(modified.formatted(date: .abbreviated, time: .shortened)).font(.caption).foregroundStyle(.secondary)
+                    Text(AppText.date(modified, dateStyle: .medium, timeStyle: .short)).font(.caption).foregroundStyle(.secondary)
                 }
                 if !state.inspectorVisible { Text(item.path).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle) }
             }
             Spacer(minLength: 4)
             VStack(alignment: .trailing, spacing: 4) {
-                Text(item.risk == .unavailable ? "未完整统计" : SweepState.size(item.bytes)).font(.callout).monospacedDigit()
-                if !state.inspectorVisible { Text(item.risk.title).font(.caption).foregroundStyle(.secondary) }
+                Text(item.risk == .unavailable ? AppText.string("未完整统计") : SweepState.size(item.bytes)).font(.callout).monospacedDigit()
+                if !state.inspectorVisible { Text(AppText.string(item.risk.title)).font(.caption).foregroundStyle(.secondary) }
             }
             Button { state.inspect(item) } label: { Image(systemName: "info.circle").frame(width: 24, height: 28) }
-                .buttonStyle(.plain).accessibilityLabel("查看 \(item.title) 的详情").disabled(state.busy)
+                .buttonStyle(.plain).accessibilityLabel(AppText.format("查看 %@ 的详情", item.title)).disabled(state.busy)
         }.padding(.vertical, 5).contentShape(Rectangle())
             .contextMenu {
                 Button("查看详情") { state.inspect(item) }

@@ -31,6 +31,9 @@ jobs:
       - name: Run UI state checks
         run: bash scripts/verify-ui-boundaries.sh
 
+      - name: Verify English localization coverage
+        run: python3 scripts/verify-localizations.py
+
       - name: Build signed app archive
         run: bash scripts/build-app.sh
 

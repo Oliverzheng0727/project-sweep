@@ -9,12 +9,14 @@ struct ProjectScanProgressView: View {
     var body: some View {
         VStack(spacing: 12) {
             ProgressView().controlSize(.large)
-            Text(stageTitle).font(.headline)
-            Text("已检查 \(progress?.count ?? 0) 个文件与目录").monospacedDigit()
+            Text(AppText.string(stageTitle)).font(.headline)
+            Text(AppText.format("已检查 %lld 个文件与目录", Int64(progress?.count ?? 0))).monospacedDigit()
             if let startedAt {
                 TimelineView(.periodic(from: startedAt, by: 1)) { context in
                     let seconds = max(0, Int(context.date.timeIntervalSince(startedAt)))
-                    Text(seconds < 60 ? "已用时 \(seconds) 秒" : "已用时 \(seconds / 60) 分 \(seconds % 60) 秒")
+                    Text(seconds < 60
+                         ? AppText.format("已用时 %lld 秒", Int64(seconds))
+                         : AppText.format("已用时 %lld 分 %lld 秒", Int64(seconds / 60), Int64(seconds % 60)))
                         .font(.caption).monospacedDigit().foregroundStyle(.secondary)
                 }
             }

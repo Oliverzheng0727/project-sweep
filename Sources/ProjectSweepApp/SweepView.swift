@@ -10,7 +10,7 @@ struct SweepView: View {
                 Label("项目清理", systemImage: "square.stack.3d.up.fill")
                     .font(.title3.weight(.semibold)).foregroundStyle(SweepPalette.accent).padding(.horizontal, 16).padding(.top, 22)
                 List(SweepState.Page.allCases, selection: $state.page) { page in
-                    Label { Text(page.rawValue) } icon: {
+                    Label { Text(AppText.string(page.rawValue)) } icon: {
                         if state.page == page {
                             Image(systemName: page.icon)
                         } else {
@@ -41,7 +41,7 @@ struct SweepView: View {
                     HStack(spacing: 9) {
                         if state.busy || state.executing { ProgressView().controlSize(.small) }
                         else { Image(systemName: "lock.shield").foregroundStyle(.secondary) }
-                        Text(state.status).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        Text(AppText.string(state.status)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                         Spacer()
                         if state.busy { Button("取消扫描", action: state.cancelScan).controlSize(.small) }
                     }.padding(.horizontal, 24).padding(.vertical, 12)
@@ -51,6 +51,6 @@ struct SweepView: View {
         .sheet(item: $state.review) { ReviewView(state: state, plan: $0) }
         .alert("无法完成操作", isPresented: Binding(get: { state.error != nil }, set: { if !$0 { state.error = nil } })) {
             Button("好") { state.error = nil }
-        } message: { Text(state.error ?? "") }
+        } message: { Text(AppText.string(state.error ?? "")) }
     }
 }

@@ -15,13 +15,13 @@ struct SkillDetailView: View {
                     Button("收起详情", systemImage: "xmark", action: close).labelStyle(.iconOnly).buttonStyle(.plain)
                 }
                 Text(entry.name).font(.title3.weight(.semibold)).textSelection(.enabled)
-                Text(entry.source).font(.caption).foregroundStyle(.secondary)
+                Text(AppText.string(entry.source)).font(.caption).foregroundStyle(.secondary)
                 if !entry.summary.isEmpty { Text(entry.summary).font(.callout).textSelection(.enabled) }
                 Divider()
                 field("位置", entry.url.path)
                 if let target = entry.linkTarget { field("引用目标（保留）", target) }
-                field(entry.removal == .reference ? "引用大小" : "可处理大小", entry.bytes.map(SweepState.size) ?? "未统计 · 只读")
-                field("实际影响", entry.impact)
+                field(entry.removal == .reference ? "引用大小" : "可处理大小", entry.bytes.map(SweepState.size) ?? AppText.string("未统计 · 只读"))
+                field("实际影响", AppText.string(entry.impact))
                 Button("在 Finder 中显示", systemImage: "folder") {
                     // Reveal the entry, never open its target or execute skill content.
                     NSWorkspace.shared.activateFileViewerSelecting([entry.url])
@@ -35,7 +35,7 @@ struct SkillDetailView: View {
     }
     private func field(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
+            Text(AppText.string(title)).font(.caption).foregroundStyle(.secondary)
             Text(value).font(.callout).textSelection(.enabled)
         }
     }

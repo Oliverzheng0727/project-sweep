@@ -22,8 +22,10 @@ struct ProjectDetailView: View {
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 5) {
-                    Text(state.filesScanned ? (state.projectOverview.isComplete ? SweepState.size(projectBytes) : "大小不完整") : state.projectScanActive ? "扫描中" : "尚未完成扫描").font(.title2.monospacedDigit())
-                    Text(state.projectScanActive ? "已检查 \(state.projectScanProgress?.count ?? 0) 项" : "\(projectItems.count) 个文件与目录 · \(state.associationSummary)")
+                    Text(state.filesScanned ? (state.projectOverview.isComplete ? SweepState.size(projectBytes) : AppText.string("大小不完整")) : state.projectScanActive ? AppText.string("扫描中") : AppText.string("尚未完成扫描")).font(.title2.monospacedDigit())
+                    Text(state.projectScanActive
+                         ? AppText.format("已检查 %lld 项", Int64(state.projectScanProgress?.count ?? 0))
+                         : AppText.fileCount(projectItems.count) + " · " + AppText.string(state.associationSummary))
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
@@ -33,8 +35,8 @@ struct ProjectDetailView: View {
             }.disabled(state.busy)
             HStack {
                 Picker("项目内容", selection: $state.projectTab) {
-                    ForEach(SweepState.ProjectTab.allCases) { Text($0.rawValue).tag($0) }
-                }.pickerStyle(.segmented).frame(width: 260)
+                    ForEach(SweepState.ProjectTab.allCases) { Text(AppText.string($0.rawValue)).tag($0) }
+                }.pickerStyle(.segmented).labelsHidden().frame(width: 260)
                 Spacer()
                 if state.mode == .remove {
                     Text("包括源码和成果，请核对最终清单。").font(.caption).foregroundStyle(.orange)
@@ -63,14 +65,14 @@ private struct ProjectModeCard: View {
             HStack(spacing: 12) {
                 Image(systemName: icon).font(.title3).foregroundStyle(symbolColor)
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(title).font(.callout.weight(.semibold))
-                    Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                    Text(AppText.string(title)).font(.callout.weight(.semibold))
+                    Text(AppText.string(subtitle)).font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
                 Image(systemName: selected ? "largecircle.fill.circle" : "circle").foregroundStyle(selected ? SweepPalette.accent : .secondary)
             }.padding(14).frame(maxWidth: .infinity, alignment: .leading)
                 .background(selected ? SweepPalette.accent.opacity(0.08) : SweepPalette.surface, in: RoundedRectangle(cornerRadius: 12))
                 .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(selected ? SweepPalette.accent.opacity(0.6) : SweepPalette.border.opacity(0.35)))
-        }.buttonStyle(.plain).accessibilityLabel(title).accessibilityValue(selected ? "已选择" : "未选择")
+        }.buttonStyle(.plain).accessibilityLabel(AppText.string(title)).accessibilityValue(AppText.string(selected ? "已选择" : "未选择"))
     }
 }

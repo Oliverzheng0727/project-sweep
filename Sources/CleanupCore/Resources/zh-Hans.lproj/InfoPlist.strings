@@ -1,0 +1,5 @@
+"CFBundleDisplayName" = "项目清理";
+"CFBundleName" = "项目清理";
+"NSDocumentsFolderUsageDescription" = "仅检查你选择的项目文件夹，并在确认后清理所选文件。";
+"NSDesktopFolderUsageDescription" = "访问你选择的桌面项目文件夹。";
+"NSDownloadsFolderUsageDescription" = "访问你选择的下载项目文件夹。";

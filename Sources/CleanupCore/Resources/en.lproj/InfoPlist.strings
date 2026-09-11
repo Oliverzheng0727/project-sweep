@@ -1,0 +1,5 @@
+"CFBundleDisplayName" = "Project Sweep";
+"CFBundleName" = "Project Sweep";
+"NSDocumentsFolderUsageDescription" = "Inspect only the project folders you choose and clean selected files after confirmation.";
+"NSDesktopFolderUsageDescription" = "Access project folders you choose on the Desktop.";
+"NSDownloadsFolderUsageDescription" = "Access project folders you choose in Downloads.";

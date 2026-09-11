@@ -2,6 +2,14 @@
 
 All notable user-visible changes are documented here.
 
+## [0.4.0] - 2026-09-11
+
+- Add a complete English interface alongside Simplified Chinese, with an immediate in-app language switch and a follow-system option.
+- Localize file sizes, folder dates, scan states, safety explanations, cleanup results, previews, and accessibility labels.
+- Add automated localization coverage and duplicate-key checks to CI.
+- Replace compressed 1123 × 768 JPEG repository screenshots with lossless 2280 × 1560 Retina PNGs in English.
+- Package localization resources inside the app so standalone builds launch without depending on the source checkout.
+
 ## [0.3.3] - 2026-09-11
 
 - Follow the macOS light or dark appearance by default, with optional fixed themes.
@@ -28,4 +36,5 @@ All notable user-visible changes are documented here.
 - Add adapters for supported Codex and Claude Code local data plus read-only Cursor session handling.
 - Protect Git-tracked content, tool configuration, skills, document packages, symbolic-link boundaries, and user keep rules.
 
+[0.4.0]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.4.0
 [0.3.3]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.3.3

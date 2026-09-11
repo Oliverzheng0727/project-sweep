@@ -184,7 +184,7 @@ final class SweepState: ObservableObject {
     private func pickFolder(message: String, initial: URL? = nil) -> URL? {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true; panel.canChooseFiles = false
-        panel.allowsMultipleSelection = false; panel.message = message
+        panel.allowsMultipleSelection = false; panel.message = AppText.string(message)
         panel.directoryURL = initial; panel.showsHiddenFiles = true
         return panel.runModal() == .OK ? panel.url : nil
     }
@@ -412,7 +412,17 @@ final class SweepState: ObservableObject {
             executing = false
         }
     }
-    static func size(_ bytes: Int64) -> String { bytes == 0 ? "0 KB" : ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file) }
+    static func size(_ bytes: Int64) -> String {
+        guard AppText.usesEnglish else { return bytes == 0 ? "0 KB" : ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file) }
+        if bytes == 0 { return "0 KB" }
+        let units = ["bytes", "KB", "MB", "GB", "TB"]
+        var value = Double(bytes)
+        var unit = 0
+        while value >= 1000, unit < units.count - 1 { value /= 1000; unit += 1 }
+        if unit == 0 { return bytes == 1 ? "1 byte" : "\(bytes) bytes" }
+        let precision = value >= 10 ? 0 : 1
+        return String(format: "%.*f %@", locale: Locale(identifier: "en"), precision, value, units[unit])
+    }
 }
 
 extension SweepState {

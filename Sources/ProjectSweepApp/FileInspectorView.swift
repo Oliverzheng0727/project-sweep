@@ -13,36 +13,36 @@ struct FileInspectorView: View {
                 Spacer()
                 if state.inspectorURL != nil {
                     Button { state.preview(item) } label: { Image(systemName: "arrow.up.left.and.arrow.down.right").frame(width: 24, height: 24) }
-                        .buttonStyle(.plain).accessibilityLabel("放大预览")
+                        .buttonStyle(.plain).accessibilityLabel(AppText.string("放大预览"))
                 }
                 Button(action: state.closeInspector) { Image(systemName: "xmark").frame(width: 24, height: 24) }
-                    .buttonStyle(.plain).accessibilityLabel("收起详情")
+                    .buttonStyle(.plain).accessibilityLabel(AppText.string("收起详情"))
             }
             HStack(spacing: 8) {
                 if item.tool == nil {
-                    Button(state.keepPaths.contains(item.path) ? "取消个人保留" : "始终保留", systemImage: "shield") { state.keep(item) }
+                    Button(AppText.string(state.keepPaths.contains(item.path) ? "取消个人保留" : "始终保留"), systemImage: "shield") { state.keep(item) }
                         .disabled(state.busy || state.executing)
                 }
                 Button("Finder 定位", systemImage: "folder") { NSWorkspace.shared.activateFileViewerSelecting([item.url]) }
-                    .accessibilityLabel("在 Finder 中显示 \(item.title)")
+                    .accessibilityLabel(AppText.format("在 Finder 中显示 %@", item.title))
             }.controlSize(.small)
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(item.title).font(.title3.weight(.semibold)).textSelection(.enabled)
                     if let url = state.inspectorURL {
                         LocalQuickLookView(url: url).frame(height: 140).clipShape(RoundedRectangle(cornerRadius: 8))
-                            .accessibilityLabel("\(item.title) 的本地预览")
+                            .accessibilityLabel(AppText.format("%@ 的本地预览", item.title))
                     } else if let message = state.inspectorMessage {
-                        Label(message, systemImage: "doc.text.magnifyingglass").font(.callout).foregroundStyle(.secondary)
+                        Label(AppText.string(message), systemImage: "doc.text.magnifyingglass").font(.callout).foregroundStyle(.secondary)
                     } else { ProgressView("正在校验预览…").controlSize(.small) }
-                    Text(item.risk.title).font(.callout.weight(.semibold))
-                    Text(item.reason).font(.callout).textSelection(.enabled)
+                    Text(AppText.string(item.risk.title)).font(.callout.weight(.semibold))
+                    Text(AppText.string(item.reason)).font(.callout).textSelection(.enabled)
                     if item.metadata["systemProtection"] == "true" {
                         Label("系统保护不会被个人保留标记解除", systemImage: "lock.shield").font(.caption).foregroundStyle(.secondary)
                     }
-                    Text("大小：\(item.risk == .unavailable ? "未完整统计" : SweepState.size(item.bytes))").font(.callout)
+                    Text(AppText.format("大小：%@", item.risk == .unavailable ? AppText.string("未完整统计") : SweepState.size(item.bytes))).font(.callout)
                     Text(item.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
-                    ForEach(Array(item.details.enumerated()), id: \.offset) { _, detail in Text(detail).font(.caption).textSelection(.enabled) }
+                    ForEach(Array(item.details.enumerated()), id: \.offset) { _, detail in Text(AppText.string(detail)).font(.caption).textSelection(.enabled) }
                     if item.action == .deleteSession { Label("历史不备份，删除后不能从本应用恢复", systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange) }
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }

@@ -41,8 +41,18 @@ struct ToolsView: View {
 struct SweepSettingsView: View {
     @ObservedObject var state: SweepState
     @AppStorage("appearance") private var appearance = "system"
+    @AppStorage("language") private var language = AppLanguagePreference.system.rawValue
     var body: some View {
         Form {
+            Section("语言") {
+                Picker("语言", selection: $language) {
+                    Text("跟随系统语言").tag(AppLanguagePreference.system.rawValue)
+                    Text("English").tag(AppLanguagePreference.english.rawValue)
+                    Text("简体中文").tag(AppLanguagePreference.simplifiedChinese.rawValue)
+                }.pickerStyle(.segmented)
+                Label("语言切换立即生效，文件名和工具名称保持原样。", systemImage: "globe")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Section("外观") {
                 Picker("主题", selection: $appearance) {
                     Text("跟随系统").tag("system")
@@ -78,6 +88,6 @@ struct SweepSettingsView: View {
                 Text("移动到废纸篓不会立即释放磁盘空间。应用不会自动清空废纸篓，也不会删除云端历史。")
                     .font(.caption).foregroundStyle(.secondary)
             }
-        }.formStyle(.grouped).padding(16).navigationTitle("设置").disabled(state.executing)
+        }.formStyle(.grouped).padding(16).navigationTitle(AppText.string("设置")).disabled(state.executing)
     }
 }

@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Security fixes are provided for the latest `0.3.x` release. Older builds may not receive updates.
+Security fixes are provided for the latest `0.4.x` release. Older builds may not receive updates.
 
 ## Report a vulnerability privately
 

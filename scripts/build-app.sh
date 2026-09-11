@@ -12,6 +12,11 @@ ASSET_DIR="$PROJECT_DIR/.build/app-assets"
 mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources" "$ASSET_DIR/AppIcon.iconset" "$PROJECT_DIR/dist"
 cp "$BIN_DIR/ProjectSweep" "$APP_DIR/Contents/MacOS/ProjectSweep"
 ditto --norsrc --noextattr "$BIN_DIR/ProjectSweep_ProjectSweepApp.bundle" "$APP_DIR/Contents/Resources/ProjectSweep_ProjectSweepApp.bundle"
+ditto --norsrc --noextattr "$BIN_DIR/ProjectSweep_CleanupCore.bundle" "$APP_DIR/Contents/Resources/ProjectSweep_CleanupCore.bundle"
+for LOCALE in en zh-Hans; do
+    mkdir -p "$APP_DIR/Contents/Resources/$LOCALE.lproj"
+    ditto --norsrc --noextattr "$PROJECT_DIR/Sources/CleanupCore/Resources/$LOCALE.lproj" "$APP_DIR/Contents/Resources/$LOCALE.lproj"
+done
 swift scripts/make-icon.swift "$ASSET_DIR/icon-source.png"
 for SIZE in 16 32 128 256 512; do
     sips -z "$SIZE" "$SIZE" "$ASSET_DIR/icon-source.png" --out "$ASSET_DIR/AppIcon.iconset/icon_${SIZE}x${SIZE}.png" >/dev/null
@@ -28,8 +33,10 @@ cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
 <key>CFBundleDisplayName</key><string>项目清理</string>
 <key>CFBundleExecutable</key><string>ProjectSweep</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>0.3.3</string>
-<key>CFBundleVersion</key><string>9</string>
+<key>CFBundleDevelopmentRegion</key><string>zh-Hans</string>
+<key>CFBundleLocalizations</key><array><string>en</string><string>zh-Hans</string></array>
+<key>CFBundleShortVersionString</key><string>0.4.0</string>
+<key>CFBundleVersion</key><string>10</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>

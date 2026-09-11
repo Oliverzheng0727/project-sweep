@@ -7,16 +7,16 @@
 [![macOS 14+](https://img.shields.io/badge/macOS-14%2B-111111?logo=apple)](https://github.com/Oliverzheng0727/project-sweep/releases/latest)
 [![MIT 许可](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-原生中文 Mac App，用于整理 AI 开发、文档、PPT、图片、视频项目留下的文件，以及受支持工具的本地数据。应用自身不接入 AI，不需要 API Key，不下载模型。
+原生中英文双语 Mac App，用于整理 AI 开发、文档、PPT、图片、视频项目留下的文件，以及受支持工具的本地数据。应用自身不接入 AI，不需要 API Key，不下载模型。
 
-**[下载 Project Sweep 0.3.3](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [查看更新记录](CHANGELOG.md)
+**[下载 Project Sweep 0.4.0](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [查看更新记录](CHANGELOG.md)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/project-cleanup-dark.jpg">
-  <img src="docs/images/project-cleanup-light.jpg" alt="Project Sweep 使用树状层级检查生成的演示项目">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/project-cleanup-dark.png">
+  <img src="docs/images/project-cleanup-light.png" alt="Project Sweep 使用树状层级检查生成的演示项目">
 </picture>
 
-_截图使用生成的演示数据和不含个人信息的共享路径。_
+_截图为无损 Retina PNG，使用生成的演示数据和不含个人信息的共享路径。_
 
 ## 下载与安装
 
@@ -26,14 +26,14 @@ _截图使用生成的演示数据和不含个人信息的共享路径。_
 
 ## 运行与使用
 
-当前版本 **0.3.3**，面向 Apple Silicon、macOS 14 及以上，使用本机临时签名；尚未公证或用于商店发布。从源码构建后，可将 `dist/ProjectSweep-macOS-arm64.zip` 解压到本机应用程序目录运行。
+当前版本 **0.4.0**，面向 Apple Silicon、macOS 14 及以上，使用本机临时签名；尚未公证或用于商店发布。从源码构建后，可将 `dist/ProjectSweep-macOS-arm64.zip` 解压到本机应用程序目录运行。
 
 构建同时生成 `dist/Project Sweep.app`。如果工作区在 iCloud 等同步目录中，同步服务可能为应用补写 Finder 属性并干扰签名校验；ZIP 在独立临时目录完成签名与归档，不受这类属性回写影响。
 
 1. 在「项目库」选择或拖入项目总目录，例如桌面的 `Claude` 文件夹。首页只列出第一层项目文件夹，不深入扫描所有项目。
 2. 网格或紧凑列表共用搜索、排序和选中项目。日期以文件夹本身的**创建时间**为准，「按创建时间」从新到旧排序；无法读取时显示「未知」，不拿修改时间或当前时间代替。双击项目，或选中后按回车「深入整理」。随后只扫描这个项目的文件，并匹配已授权工具中明确关联的本地记录。已完成扫描的项目额外显示本次运行中上次扫描的大小、缓存量和时间，创建日期仍然保留；其他项目显示「未扫描」。
 
-![Project Sweep 使用生成项目展示的项目库](docs/images/project-library-light.jpg)
+![Project Sweep 使用生成项目展示的项目库](docs/images/project-library-light.png)
 3. 「保留成果，清理残留」保留根目录，明确缓存可用快捷按钮选中。构建产物、依赖、中间稿和脚本需要手动选择。默认使用文件树，项目根目录采用独立图标和“项目根目录”标签，首次展开根目录、内部目录收起；大小排序仅比较同级内容。也可切换平铺列表，根目录和内部文件分别显示，展示方式会保存。
 4. 点击文件行查看右侧详情，勾选框单独控制清理选择。详情提供系统 Quick Look、放大预览、Finder 定位和「始终保留」。Git 已跟踪文件、工具配置与技能（包括 `.agents/skills`）、保留项和包含这些内容的上层目录受到保护；取消个人保留不会解除系统保护。
 5. 「移除整个项目」仅在项目根目录显示清理勾选框，以整个所选文件夹为单位移入废纸篓，包括源码和作品。内部条目用于查看，并提示会随项目一起移入废纸篓。在同一项目的「关联记录」页另外勾选相关会话，然后与项目文件一起查看最终清单。
@@ -47,7 +47,9 @@ _截图使用生成的演示数据和不含个人信息的共享路径。_
 
 深入扫描时显示当前步骤、已检查数量、路径和耗时。Git 保护规则在每次扫描中建立索引，遇到嵌套仓库和文档包时补充，避免逐文件遍历整份跟踪清单。完整扫描后才能勾选清理；取消不会留下可执行的部分结果。
 
-## 外观
+## 语言与外观
+
+界面默认跟随 macOS 语言。在「设置 → 语言」中可选择 **English**、**简体中文**或**跟随系统语言**，切换立即生效，不改变文件名、项目名和工具名。
 
 默认跟随 macOS 的浅色和深色外观。按钮、选中状态和项目高亮使用系统强调色，可在“系统设置 → 外观”中更改；应用设置仍可单独选择固定浅色或深色。
 
@@ -112,6 +114,7 @@ git clone https://github.com/Oliverzheng0727/project-sweep.git
 cd project-sweep
 swift build
 swift test
+python3 scripts/verify-localizations.py
 bash scripts/verify-ui-boundaries.sh
 bash scripts/build-app.sh
 ```

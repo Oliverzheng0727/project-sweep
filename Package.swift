@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "ProjectSweep",
+    defaultLocalization: "zh-Hans",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "CleanupCore", targets: ["CleanupCore"]),
@@ -10,7 +11,7 @@ let package = Package(
     ],
     targets: [
         .systemLibrary(name: "CSQLite"),
-        .target(name: "CleanupCore", dependencies: ["CSQLite"]),
+        .target(name: "CleanupCore", dependencies: ["CSQLite"], resources: [.process("Resources")]),
         .executableTarget(name: "ProjectSweepApp", dependencies: ["CleanupCore"], resources: [.process("Resources/ToolLogos")]),
         .testTarget(name: "CleanupCoreTests", dependencies: ["CleanupCore", "CSQLite"])
     ],

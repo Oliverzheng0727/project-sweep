@@ -32,7 +32,7 @@ struct ProjectLibraryView: View {
                         Divider()
                         Button("移除项目库入口（保留文件）", action: state.forgetLibrary)
                     }
-                } label: { Label(state.libraryRoot == nil ? "添加目录" : "更换目录", systemImage: "folder.badge.plus") }
+                } label: { Label(AppText.string(state.libraryRoot == nil ? "添加目录" : "更换目录"), systemImage: "folder.badge.plus") }
                     .menuStyle(.borderlessButton).fixedSize()
             }
             if let library = state.libraryRoot {
@@ -46,7 +46,7 @@ struct ProjectLibraryView: View {
                         Text(library.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                     }
                     Spacer()
-                    Text("\(state.catalog?.projects.count ?? 0) 个项目").foregroundStyle(.secondary)
+                    Text(AppText.format("%lld 个项目", Int64(state.catalog?.projects.count ?? 0))).foregroundStyle(.secondary)
                     Button("刷新", systemImage: "arrow.clockwise", action: state.loadLibrary).disabled(state.busy)
                 }.padding(16).background(SweepPalette.accent.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
                 HStack {
@@ -80,14 +80,14 @@ struct ProjectLibraryView: View {
                     }
                 }.overlay {
                     if projects.isEmpty, !state.busy {
-                        ContentUnavailableView(state.librarySearch.isEmpty ? "这个目录还没有项目文件夹" : "没有找到这个项目", systemImage: "folder",
-                            description: Text(state.librarySearch.isEmpty ? "请选择包含多个项目文件夹的上一级目录，也可以直接打开单个项目。" : "尝试其他名称。"))
+                        ContentUnavailableView(AppText.string(state.librarySearch.isEmpty ? "这个目录还没有项目文件夹" : "没有找到这个项目"), systemImage: "folder",
+                            description: Text(AppText.string(state.librarySearch.isEmpty ? "请选择包含多个项目文件夹的上一级目录，也可以直接打开单个项目。" : "尝试其他名称。")))
                     }
                 }
                 HStack(spacing: 16) {
                     VStack(alignment: .leading, spacing: 5) {
-                        Text(selectedProject?.title ?? "先选中一个项目").font(.headline)
-                        Text(selectedProject?.issue ?? (selectedProject == nil ? "这里只列出项目，进入后才开始深入扫描。" : "可以保留成果并整理残留，或移除整个项目。"))
+                        Text(selectedProject?.title ?? AppText.string("先选中一个项目")).font(.headline)
+                        Text(selectedProject?.issue.map(AppText.string) ?? AppText.string(selectedProject == nil ? "这里只列出项目，进入后才开始深入扫描。" : "可以保留成果并整理残留，或移除整个项目。"))
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
@@ -127,17 +127,17 @@ struct ProjectLibraryView: View {
             ProjectFolderIcon(size: 30, available: project.isAvailable)
             VStack(alignment: .leading, spacing: 4) {
                 Text(project.title).font(.body.weight(.medium))
-                Text("创建：\(project.createdAt?.formatted(date: .abbreviated, time: .omitted) ?? "未知")")
+                Text(AppText.format("创建：%@", project.createdAt.map { AppText.date($0, dateStyle: .medium, timeStyle: .none) } ?? AppText.string("未知")))
                     .font(.caption).foregroundStyle(.secondary)
-                if let issue = project.issue { Text(issue).font(.caption).foregroundStyle(.secondary) }
+                if let issue = project.issue { Text(AppText.string(issue)).font(.caption).foregroundStyle(.secondary) }
             }
             Spacer()
             if let summary = state.summary(for: project) {
                 VStack(alignment: .trailing, spacing: 4) {
-                    Text("\(SweepState.size(summary.bytes)) · 缓存 \(SweepState.size(summary.cacheBytes))").font(.callout).monospacedDigit()
-                    Text("上次扫描 \(summary.scannedAt.formatted(date: .omitted, time: .shortened))").font(.caption).foregroundStyle(.secondary)
+                    Text(AppText.format("%@ · 缓存 %@", SweepState.size(summary.bytes), SweepState.size(summary.cacheBytes))).font(.callout).monospacedDigit()
+                    Text(AppText.format("上次扫描 %@", AppText.date(summary.scannedAt, dateStyle: .none, timeStyle: .short))).font(.caption).foregroundStyle(.secondary)
                 }
-            } else { Text("未扫描").font(.caption).foregroundStyle(.secondary) }
+            } else { Text(AppText.string("未扫描")).font(.caption).foregroundStyle(.secondary) }
             Image(systemName: project.isAvailable ? "chevron.right" : "lock.fill").foregroundStyle(.secondary)
         }.padding(.vertical, 7).contentShape(Rectangle())
             .accessibilityElement(children: .combine)
