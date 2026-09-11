@@ -1,0 +1,84 @@
+name: Bug report
+description: Report reproducible behavior using generated or sanitized data.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Project Sweep. Do not include chat content, credentials, private project names, or unredacted personal paths.
+
+  - type: input
+    id: version
+    attributes:
+      label: Project Sweep version
+      placeholder: 0.3.3 (9)
+    validations:
+      required: true
+
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and Mac model
+      placeholder: macOS 15.6, MacBook Air M3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Project library or scan
+        - Project cleanup or restore
+        - Codex local data
+        - Claude Code local data
+        - Cursor local data
+        - Skills management
+        - Appearance or accessibility
+        - Build or packaging
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Prefer a generated test folder that contains no personal data.
+      placeholder: |
+        1. Create ...
+        2. Select ...
+        3. Click ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Sanitized diagnostics
+      description: Add screenshots or logs only after removing personal paths, conversation text, tokens, and credentials.
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Data-safety check
+      options:
+        - label: I removed personal paths, project content, conversation text, tokens, and credentials from this report.
+          required: true
+        - label: I reproduced this with generated or disposable test data where possible.
+          required: true

@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Oliverzheng0727/project-sweep/security/advisories/new
+    about: Report security and privacy issues privately instead of opening a public issue.

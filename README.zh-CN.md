@@ -2,7 +2,27 @@
 
 [English](README.md) | **简体中文**
 
+[![CI](https://github.com/Oliverzheng0727/project-sweep/actions/workflows/ci.yml/badge.svg)](https://github.com/Oliverzheng0727/project-sweep/actions/workflows/ci.yml)
+[![最新版本](https://img.shields.io/github/v/release/Oliverzheng0727/project-sweep)](https://github.com/Oliverzheng0727/project-sweep/releases/latest)
+[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-111111?logo=apple)](https://github.com/Oliverzheng0727/project-sweep/releases/latest)
+[![MIT 许可](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 原生中文 Mac App，用于整理 AI 开发、文档、PPT、图片、视频项目留下的文件，以及受支持工具的本地数据。应用自身不接入 AI，不需要 API Key，不下载模型。
+
+**[下载 Project Sweep 0.3.3](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [查看更新记录](CHANGELOG.md)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/project-cleanup-dark.jpg">
+  <img src="docs/images/project-cleanup-light.jpg" alt="Project Sweep 使用树状层级检查生成的演示项目">
+</picture>
+
+_截图使用生成的演示数据和不含个人信息的共享路径。_
+
+## 下载与安装
+
+从 [Releases](https://github.com/Oliverzheng0727/project-sweep/releases/latest) 下载 `ProjectSweep-macOS-arm64.zip`，解压后把 **Project Sweep.app** 移到“应用程序”。
+
+当前公开构建使用本机临时签名，尚未经过 Apple 公证。如果首次双击被 macOS 拦截，请按住 Control 点击应用，选择“打开”，再确认一次。Release 同时提供 SHA-256 校验值与源码归档。
 
 ## 运行与使用
 
@@ -12,6 +32,8 @@
 
 1. 在「项目库」选择或拖入项目总目录，例如桌面的 `Claude` 文件夹。首页只列出第一层项目文件夹，不深入扫描所有项目。
 2. 网格或紧凑列表共用搜索、排序和选中项目。日期以文件夹本身的**创建时间**为准，「按创建时间」从新到旧排序；无法读取时显示「未知」，不拿修改时间或当前时间代替。双击项目，或选中后按回车「深入整理」。随后只扫描这个项目的文件，并匹配已授权工具中明确关联的本地记录。已完成扫描的项目额外显示本次运行中上次扫描的大小、缓存量和时间，创建日期仍然保留；其他项目显示「未扫描」。
+
+![Project Sweep 使用生成项目展示的项目库](docs/images/project-library-light.jpg)
 3. 「保留成果，清理残留」保留根目录，明确缓存可用快捷按钮选中。构建产物、依赖、中间稿和脚本需要手动选择。默认使用文件树，项目根目录采用独立图标和“项目根目录”标签，首次展开根目录、内部目录收起；大小排序仅比较同级内容。也可切换平铺列表，根目录和内部文件分别显示，展示方式会保存。
 4. 点击文件行查看右侧详情，勾选框单独控制清理选择。详情提供系统 Quick Look、放大预览、Finder 定位和「始终保留」。Git 已跟踪文件、工具配置与技能（包括 `.agents/skills`）、保留项和包含这些内容的上层目录受到保护；取消个人保留不会解除系统保护。
 5. 「移除整个项目」仅在项目根目录显示清理勾选框，以整个所选文件夹为单位移入废纸篓，包括源码和作品。内部条目用于查看，并提示会随项目一起移入废纸篓。在同一项目的「关联记录」页另外勾选相关会话，然后与项目文件一起查看最终清单。
@@ -110,6 +132,6 @@ PROJECT_SWEEP_TEST_CODEX=/absolute/path/to/codex swift test
 
 ## 参与和许可
 
-欢迎通过 [Issues](https://github.com/Oliverzheng0727/project-sweep/issues) 反馈问题或提交 Pull Request。测试与提交说明见 [CONTRIBUTING.md](CONTRIBUTING.zh-CN.md)。反馈时请使用生成的测试项目，并移除个人路径、会话正文及凭据。
+欢迎通过 [Issues](https://github.com/Oliverzheng0727/project-sweep/issues) 反馈问题或提交 Pull Request。测试与提交说明见 [CONTRIBUTING.md](CONTRIBUTING.zh-CN.md)。反馈时请使用生成的测试项目，并移除个人路径、会话正文及凭据。一般帮助见 [SUPPORT.md](SUPPORT.md)，安全或隐私问题请按 [SECURITY.md](SECURITY.md) 私密报告。
 
 本项目源码采用 [MIT License](LICENSE)。Codex、Claude 和 Cursor 的名称与标识属于各自权利人，不属于本项目 MIT 授权范围；来源与说明见 [第三方资源说明](THIRD_PARTY_NOTICES.zh-CN.md)。Project Sweep 是独立项目，不代表这些工具的官方产品或合作关系。

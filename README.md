@@ -2,11 +2,25 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-A native macOS app for cleaning up AI-assisted projects, local tool data, and skills. Inspect a project, choose what to remove, review the impact, and clean up with explicit confirmation.
+[![CI](https://github.com/Oliverzheng0727/project-sweep/actions/workflows/ci.yml/badge.svg)](https://github.com/Oliverzheng0727/project-sweep/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/Oliverzheng0727/project-sweep)](https://github.com/Oliverzheng0727/project-sweep/releases/latest)
+[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-111111?logo=apple)](https://github.com/Oliverzheng0727/project-sweep/releases/latest)
+[![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+A native macOS app for safely cleaning up AI-assisted projects, local tool data, and skills. Inspect one project, choose exactly what to remove, review the impact, and clean up with explicit confirmation.
 
 Project Sweep runs locally. It does not connect to an AI service, require an API key, or download a model. It supports code, documents, presentations, images, video, and mixed projects.
 
 **Version:** 0.3.3 · **Platform:** Apple Silicon, macOS 14+ · **App interface:** Simplified Chinese
+
+**[Download Project Sweep 0.3.3](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [View the changelog](CHANGELOG.md)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/project-cleanup-dark.jpg">
+  <img src="docs/images/project-cleanup-light.jpg" alt="Project Sweep inspecting a generated project in its hierarchical cleanup view">
+</picture>
+
+_Screenshot uses generated demo data and a sanitized shared path._
 
 ## What you can do
 
@@ -16,6 +30,12 @@ Project Sweep runs locally. It does not connect to an AI service, require an API
 - Manage Claude Code and Codex skills separately, including removing a shared skill's reference without deleting its original files.
 - Preview files with Quick Look, reveal them in Finder, and mark content to always keep.
 - Review cleanup results and restore files from Trash without overwriting existing files.
+
+## Install
+
+Download `ProjectSweep-macOS-arm64.zip` from the [latest release](https://github.com/Oliverzheng0727/project-sweep/releases/latest), extract it, and move **Project Sweep.app** to Applications.
+
+Release builds use an ad hoc local signature and are not notarized. If macOS blocks the first launch, Control-click the app, choose **Open**, then confirm once. SHA-256 checksums and a source archive are attached to each release.
 
 ## Build and run
 
@@ -48,6 +68,8 @@ Project cards use the native system folder image, adaptive surfaces, and subtle 
 ### Choose a project
 
 Add or drag in a folder that contains your projects, such as a `Claude` folder on your Desktop. The library lists only its immediate project folders; it does not recursively scan every project to populate the home screen.
+
+![Project Sweep project library with generated demo projects](docs/images/project-library-light.jpg)
 
 Grid and compact list views share search, sorting, and the current project selection. Dates come from each folder's **creation time**. Missing dates remain unknown rather than falling back to modification time or today's date. Double-click a project, or select it and press Return, to scan it in depth.
 
@@ -141,7 +163,7 @@ This version does not edit Codex configuration to disable shared originals or un
 
 ## Development and validation
 
-The core and UI checks are included in the build commands above. The current 0.3.2 acceptance record reports **92 passing core tests and 46 passing UI state checks**. Native interface checks used generated projects. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
+The core and UI checks are included in the build commands above. The current 0.3.3 acceptance record reports **92 passing core tests and 46 passing UI state checks**. Native interface checks used generated projects. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
 
 The actual Codex protocol test is optional and skipped unless you provide a local CLI path:
 
@@ -171,6 +193,6 @@ Protocol and storage references: [Codex app-server protocol](https://github.com/
 
 ## Contributing and license
 
-Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for development and reporting guidance. Use generated fixtures and remove personal paths, conversation content, and credentials from reports.
+Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for development and reporting guidance. Use generated fixtures and remove personal paths, conversation content, and credentials from reports. See [SUPPORT.md](SUPPORT.md) for help and [SECURITY.md](SECURITY.md) for private vulnerability reporting.
 
 Project source code is licensed under the [MIT License](LICENSE). Codex, Claude, and Cursor names and logos belong to their respective owners and are outside this project's MIT grant; see [third-party notices](THIRD_PARTY_NOTICES.md). Project Sweep is an independent project and does not imply official affiliation or endorsement.
