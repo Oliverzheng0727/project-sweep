@@ -87,7 +87,8 @@ public enum AppText {
             return "Found \(values[0]) project folders · Select one to begin a deep inspection"
         }
         if let values = captures(#"^已检查当前项目 (\d+) 项 · (.+)$"#, in: source) {
-            return "Inspected \(values[0]) project items · \(string(values[1]))"
+            let unit = values[0] == "1" ? "item" : "items"
+            return "Inspected \(values[0]) project \(unit) · \(string(values[1]))"
         }
         if let values = captures(#"^已检查 (\d+) 项 · .+$"#, in: source) {
             return "Inspected \(values[0]) items · Select what you want to clean"

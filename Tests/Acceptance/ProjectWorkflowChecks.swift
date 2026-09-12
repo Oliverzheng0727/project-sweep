@@ -38,8 +38,14 @@ import Foundation
         try await finish()
         guard !state.isProjectOpen, state.items.isEmpty, state.catalog?.projects.count == 2 else { fatalError("Library eagerly scanned projects") }
         print("PASS: library lists two projects without opening or scanning either")
-        state.openProject(state.catalog!.projects.first { $0.path == a.path }!)
+        let firstProject = state.catalog!.projects.first { $0.path == a.path }!
+        state.togglePinned(firstProject)
+        state.libraryFilter = .recent
+        state.openProject(firstProject)
         try await finish()
+        guard state.status.contains("已检查当前项目 \(state.projectOverview.inventoryCount) 项") else {
+            fatalError("Final project status counted the synthetic root row")
+        }
         guard state.root?.path == a.path, state.items.filter({ $0.action == .deleteSession }).map(\.sessionID) == [aID],
               state.items.filter({ $0.tool == nil }).allSatisfy({ PathSafety.isWithin($0.path, root: a.path) }) else { fatalError("Project scope leaked") }
         guard state.items.filter({ $0.category == .projectMemory }).count == 1,
@@ -70,6 +76,10 @@ import Foundation
         guard state.libraryRoot == nil, state.configurations.isEmpty,
               preferences.data(forKey: "grant.library") == nil,
               fm.fileExists(atPath: a.path), fm.fileExists(atPath: tool.path) else { fatalError("Disconnect modified project data") }
+        let restored = SweepState(store: RecordStore(directory: sandbox.appendingPathComponent("logs-restored")),
+                                  restorePreferences: false, preferences: preferences)
+        guard restored.libraryFilter == .recent, restored.pinnedProjectPaths == Set([a.path]),
+              restored.recentProjectPaths.first == b.path else { fatalError("Project library preferences were not restored") }
         print("PASS: disconnecting the library and tool preserves files and removes saved access")
     }
 }

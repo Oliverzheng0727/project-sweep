@@ -6,13 +6,10 @@ struct ProjectLibraryView: View {
     @ObservedObject var state: SweepState
 
     private var projects: [ProjectDirectory] {
-        (state.catalog?.projects ?? []).filter { state.librarySearch.isEmpty || $0.title.localizedStandardContains(state.librarySearch) }
-            .sorted {
-                if state.libraryNewestFirst, $0.createdAt != $1.createdAt {
-                    return ($0.createdAt ?? .distantPast) > ($1.createdAt ?? .distantPast)
-                }
-                return $0.title.localizedStandardCompare($1.title) == .orderedAscending
-            }
+        ProjectLibraryQuery(search: state.librarySearch, filter: state.libraryFilter,
+                            newestFirst: state.libraryNewestFirst)
+            .apply(to: state.catalog?.projects ?? [], summaries: state.scanSummaries,
+                   recentPaths: state.recentProjectPaths, pinnedPaths: state.pinnedProjectPaths)
     }
     private var selectedProject: ProjectDirectory? { projects.first { $0.path == state.librarySelection } }
 
@@ -51,6 +48,15 @@ struct ProjectLibraryView: View {
                 }.padding(16).background(SweepPalette.accent.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
                 HStack {
                     TextField("搜索项目名称", text: $state.librarySearch).textFieldStyle(.roundedBorder)
+                    Menu {
+                        Picker("项目筛选", selection: $state.libraryFilter) {
+                            ForEach(ProjectLibraryFilter.allCases) { filter in
+                                Text(AppText.string(filter.title)).tag(filter)
+                            }
+                        }
+                    } label: {
+                        Label(AppText.string(state.libraryFilter.title), systemImage: "line.3.horizontal.decrease")
+                    }.fixedSize()
                     Toggle("按创建时间", isOn: $state.libraryNewestFirst).toggleStyle(.button)
                         .help("按文件夹创建时间从新到旧排列；未知时间放在最后")
                     Picker("浏览方式", selection: $state.libraryListMode) {
@@ -65,7 +71,10 @@ struct ProjectLibraryView: View {
                                 libraryRow(project).tag(project.path)
                                     .simultaneousGesture(TapGesture(count: 2).onEnded { state.openProject(project) })
                                     .accessibilityAction(named: "深入整理") { state.openProject(project) }
-                                    .contextMenu { Button("深入整理") { state.openProject(project) }.disabled(!project.isAvailable) }
+                                    .contextMenu {
+                                        Button("深入整理") { state.openProject(project) }.disabled(!project.isAvailable)
+                                        Button(AppText.string(state.isPinned(project) ? "取消置顶" : "置顶项目")) { state.togglePinned(project) }
+                                    }
                             }
                         }.listStyle(.inset)
                     } else {
@@ -73,15 +82,17 @@ struct ProjectLibraryView: View {
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 150, maximum: 210), spacing: 14)], alignment: .leading, spacing: 14) {
                                 ForEach(projects) { project in
                                     ProjectFolderCard(project: project, summary: state.summary(for: project), selected: state.librarySelection == project.path,
-                                        select: { state.librarySelection = project.path }, open: { state.openProject(project) })
+                                        pinned: state.isPinned(project), select: { state.librarySelection = project.path },
+                                        open: { state.openProject(project) }, togglePin: { state.togglePinned(project) })
                                 }
                             }.padding(2)
                         }
                     }
                 }.overlay {
                     if projects.isEmpty, !state.busy {
-                        ContentUnavailableView(AppText.string(state.librarySearch.isEmpty ? "这个目录还没有项目文件夹" : "没有找到这个项目"), systemImage: "folder",
-                            description: Text(AppText.string(state.librarySearch.isEmpty ? "请选择包含多个项目文件夹的上一级目录，也可以直接打开单个项目。" : "尝试其他名称。")))
+                        let filtering = !state.librarySearch.isEmpty || state.libraryFilter != .all
+                        ContentUnavailableView(AppText.string(filtering ? "没有符合当前筛选的项目" : "这个目录还没有项目文件夹"), systemImage: "folder",
+                            description: Text(AppText.string(filtering ? "更改搜索或筛选条件。" : "请选择包含多个项目文件夹的上一级目录，也可以直接打开单个项目。")))
                     }
                 }
                 HStack(spacing: 16) {
@@ -91,6 +102,12 @@ struct ProjectLibraryView: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
+                    if let project = selectedProject {
+                        Button(AppText.string(state.isPinned(project) ? "取消置顶" : "置顶项目"),
+                               systemImage: state.isPinned(project) ? "pin.slash" : "pin") {
+                            state.togglePinned(project)
+                        }.buttonStyle(.bordered)
+                    }
                     Button("深入整理", systemImage: "arrow.right") {
                         if let project = selectedProject { state.openProject(project) }
                     }.buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.return, modifiers: [])
@@ -126,7 +143,13 @@ struct ProjectLibraryView: View {
         HStack(spacing: 12) {
             ProjectFolderIcon(size: 30, available: project.isAvailable)
             VStack(alignment: .leading, spacing: 4) {
-                Text(project.title).font(.body.weight(.medium))
+                HStack(spacing: 6) {
+                    Text(project.title).font(.body.weight(.medium))
+                    if state.isPinned(project) {
+                        Image(systemName: "pin.fill").font(.caption).foregroundStyle(SweepPalette.accent)
+                            .accessibilityLabel("已置顶")
+                    }
+                }
                 Text(AppText.format("创建：%@", project.createdAt.map { AppText.date($0, dateStyle: .medium, timeStyle: .none) } ?? AppText.string("未知")))
                     .font(.caption).foregroundStyle(.secondary)
                 if let issue = project.issue { Text(AppText.string(issue)).font(.caption).foregroundStyle(.secondary) }

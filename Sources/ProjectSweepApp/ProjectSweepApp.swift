@@ -13,6 +13,7 @@ struct ProjectSweepApp: App {
     var body: some Scene {
         WindowGroup(AppText.string("项目清理")) {
             SweepView(state: state)
+                .id(languagePreference.id)
                 .frame(minWidth: 960, minHeight: 680)
                 .environment(\.locale, languagePreference.locale)
                 .preferredColorScheme(appearance == "light" ? .light : appearance == "dark" ? .dark : nil)

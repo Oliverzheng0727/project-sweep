@@ -36,6 +36,7 @@ final class UsabilityCoreTests: XCTestCase, @unchecked Sendable {
             try write(root, "作品.app/Contents/data", "12")
             let scan = try await ProjectScanner().scan(ScanRequest(root: root))
             let summary = ProjectOverview(items: scan.items)
+            XCTAssertEqual(summary.inventoryCount, scan.items.filter { $0.tool == nil && $0.path != root.path }.count)
             XCTAssertEqual(summary.totalBytes, 14)
             XCTAssertEqual(summary.summary(for: .recommended).count, 1)
             XCTAssertEqual(summary.summary(for: .recommended).bytes, 4)

@@ -573,6 +573,32 @@
 "部分缓存或日志无法检查；会话读取状态单独统计" = "Some caches or logs could not be inspected; session-reading status is reported separately";
 "项目记忆单独保护" = "Project memory is protected separately";
 
+/* Project library and tool setup */
+"根目录保留" = "Project Root Kept";
+"全部项目" = "All Projects";
+"最近打开" = "Recently Opened";
+"已扫描" = "Scanned";
+"包含缓存" = "Has Cache";
+"不可用" = "Unavailable";
+"项目筛选" = "Project Filter";
+"置顶项目" = "Pin Project";
+"取消置顶" = "Unpin Project";
+"已置顶" = "Pinned";
+"没有符合当前筛选的项目" = "No Projects Match This Filter";
+"更改搜索或筛选条件。" = "Change the search or filter.";
+"设置工具数据…" = "Set Up Tool Data…";
+"检测到 %lld 个工具数据目录" = "Found %lld Tool Data Folders";
+"工具数据设置" = "Tool Data Setup";
+"自动检测默认位置，并为每个 AI 单独授权。" = "Detect default locations and authorize each AI separately.";
+"已连接" = "Connected";
+"已检测到默认目录" = "Default Folder Detected";
+"未检测到默认目录" = "Default Folder Not Found";
+"连接此目录…" = "Connect This Folder…";
+"系统会在授权窗口中再次确认目录。" = "The folder authorization dialog will ask you to confirm the location.";
+"完成" = "Done";
+"尚未连接工具数据" = "No Tool Data Connected";
+"请为 Codex、Claude Code 或 Cursor 单独选择本地数据目录。" = "Choose a local data folder separately for Codex, Claude Code, or Cursor.";
+
 /* Tool file and database safety */
 "不进入工具目录中的文档或应用包" = "Document and app packages in tool folders are not expanded";
 "云端占位文件，不主动下载或读取" = "Cloud placeholder; not downloaded or read";

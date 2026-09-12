@@ -26,8 +26,17 @@ final class SweepState: ObservableObject {
     @Published var catalog: ProjectCatalogResult?
     @Published var librarySearch = ""
     @Published var librarySelection: String?
-    @Published var libraryNewestFirst = false
+    @Published var libraryNewestFirst = false { didSet { preferences.set(libraryNewestFirst, forKey: "libraryNewestFirst") } }
     @Published var libraryListMode = false { didSet { preferences.set(libraryListMode, forKey: "libraryListMode") } }
+    @Published var libraryFilter: ProjectLibraryFilter = .all {
+        didSet { preferences.set(libraryFilter.rawValue, forKey: "libraryFilter") }
+    }
+    @Published private(set) var pinnedProjectPaths: Set<String> = [] {
+        didSet { preferences.set(Array(pinnedProjectPaths), forKey: "pinnedProjectPaths") }
+    }
+    @Published private(set) var recentProjectPaths: [String] = [] {
+        didSet { preferences.set(recentProjectPaths, forKey: "recentProjectPaths") }
+    }
     @Published var scanSummaries: [String: ProjectScanSummary] = [:]
     @Published var browserFilters: [BrowserScope: BrowserFilters] = [:]
     @Published var projectTreeExpansion = ProjectTreeExpansion()
@@ -80,6 +89,10 @@ final class SweepState: ObservableObject {
         self.skills = SkillManagementState(preferences: preferences, restorePreferences: restorePreferences)
         self.preferences = preferences
         self.libraryListMode = preferences.bool(forKey: "libraryListMode")
+        self.libraryNewestFirst = preferences.bool(forKey: "libraryNewestFirst")
+        self.libraryFilter = ProjectLibraryFilter(rawValue: preferences.string(forKey: "libraryFilter") ?? "") ?? .all
+        self.pinnedProjectPaths = Set(preferences.stringArray(forKey: "pinnedProjectPaths") ?? [])
+        self.recentProjectPaths = preferences.stringArray(forKey: "recentProjectPaths") ?? []
         self.prefersProjectTree = preferences.object(forKey: "projectFileTree") as? Bool ?? true
         self.grants = FolderGrants(defaults: preferences)
         guard restorePreferences else {
@@ -139,6 +152,16 @@ final class SweepState: ObservableObject {
         do { acceptProject(try ProjectCatalog.validateOpening(project, from: catalog)) }
         catch { self.error = error.localizedDescription }
     }
+    func isPinned(_ project: ProjectDirectory) -> Bool { pinnedProjectPaths.contains(project.path) }
+    func togglePinned(_ project: ProjectDirectory) {
+        if pinnedProjectPaths.contains(project.path) { pinnedProjectPaths.remove(project.path) }
+        else { pinnedProjectPaths.insert(project.path) }
+    }
+    private func recordRecentProject(_ path: String) {
+        recentProjectPaths.removeAll { $0 == path }
+        recentProjectPaths.insert(path, at: 0)
+        recentProjectPaths = Array(recentProjectPaths.prefix(30))
+    }
     func backToLibrary() {
         guard !executing else { return }
         isProjectOpen = false; root = nil; invalidate(); items = []; warnings = []
@@ -159,6 +182,7 @@ final class SweepState: ObservableObject {
         guard !executing else { return }
         do {
             let granted = try grants.grant(url, key: "project")
+            recordRecentProject(granted.path)
             isProjectOpen = false; mode = .organize; page = .project
             root = granted; projectTab = .files; isProjectOpen = true; scanProject()
         }
@@ -254,7 +278,7 @@ final class SweepState: ObservableObject {
                 let related = ProjectAssociations.items(for: root, from: inventory)
                 if !related.isEmpty { items += related }
                 busy = false
-                status = "已检查当前项目 \(result.items.count) 项 · \(associationSummary)"
+                status = "已检查当前项目 \(projectOverview.inventoryCount) 项 · \(associationSummary)"
             } catch {
                 guard token == generation else { return }
                 busy = false; if !Task.isCancelled { self.error = error.localizedDescription }

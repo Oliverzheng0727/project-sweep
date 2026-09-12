@@ -11,9 +11,9 @@ A native macOS app for safely cleaning up AI-assisted projects, local tool data,
 
 Project Sweep runs locally. It does not connect to an AI service, require an API key, or download a model. It supports code, documents, presentations, images, video, and mixed projects.
 
-**Version:** 0.4.0 · **Platform:** Apple Silicon, macOS 14+ · **App interface:** English and Simplified Chinese
+**Version:** 0.4.1 · **Platform:** Apple Silicon, macOS 14+ · **App interface:** English and Simplified Chinese
 
-**[Download Project Sweep 0.4.0](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [View the changelog](CHANGELOG.md)
+**[Download Project Sweep 0.4.1](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [View the changelog](CHANGELOG.md)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/project-cleanup-dark.png">
@@ -74,7 +74,7 @@ Add or drag in a folder that contains your projects, such as a `Claude` folder o
 
 ![Project Sweep project library with generated demo projects](docs/images/project-library-light.png)
 
-Grid and compact list views share search, sorting, and the current project selection. Dates come from each folder's **creation time**. Missing dates remain unknown rather than falling back to modification time or today's date. Double-click a project, or select it and press Return, to scan it in depth.
+Grid and compact list views share search, sorting, filters, pinning, and the current project selection. Filter for recently opened, scanned, cached, or unavailable projects without scanning the whole library. Dates come from each folder's **creation time**. Missing dates remain unknown rather than falling back to modification time or today's date. Double-click a project, or select it and press Return, to scan it in depth.
 
 After a complete scan, its card can show the size, cache total, and scan time from the current app run. These values are separate from the folder's creation date. Projects without a completed scan are marked as unscanned.
 
@@ -115,7 +115,7 @@ The workflow is **scan → select → review → execute → inspect results**. 
 
 ## AI tool support
 
-Authorize each tool's data directory independently on the tool-data page or the project's related-records page. Custom locations are supported. Project associations use explicit paths or tool metadata; uncertain associations remain read-only or appear separately.
+Authorize each tool's data directory independently on the tool-data page or the project's related-records page. The setup guide detects standard local folders before authorization, and custom locations remain supported. Project associations use explicit paths or tool metadata; uncertain associations remain read-only or appear separately.
 
 | Tool | Typical local directory | Current support |
 | --- | --- | --- |
@@ -166,7 +166,7 @@ This version does not edit Codex configuration to disable shared originals or un
 
 ## Development and validation
 
-The core and UI checks are included in the build commands above. The current 0.4.0 acceptance record reports **95 passing core tests, 46 passing UI state checks, and 557 English localization entries checked for coverage and duplicate keys**. Native interface checks used generated projects. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
+The core and UI checks are included in the build commands above. The current 0.4.1 acceptance record reports **95 passing core tests, 47 passing UI state checks, and 581 English localization entries checked for coverage and duplicate keys**. Native interface checks used generated projects. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
 
 The actual Codex protocol test is optional and skipped unless you provide a local CLI path:
 

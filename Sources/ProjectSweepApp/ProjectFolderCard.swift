@@ -5,8 +5,10 @@ struct ProjectFolderCard: View {
     let project: ProjectDirectory
     let summary: ProjectScanSummary?
     let selected: Bool
+    let pinned: Bool
     let select: () -> Void
     let open: () -> Void
+    let togglePin: () -> Void
     @State private var hovered = false
     var body: some View {
         Button(action: select) {
@@ -19,8 +21,10 @@ struct ProjectFolderCard: View {
                     }
                     if !project.isAvailable { Image(systemName: "lock.fill").foregroundStyle(.secondary) }
                 }.accessibilityHidden(true)
-                Text(project.title).font(.body.weight(.medium)).lineLimit(2).multilineTextAlignment(.center)
-                    .frame(height: 38, alignment: .top)
+                HStack(spacing: 5) {
+                    Text(project.title).font(.body.weight(.medium)).lineLimit(2).multilineTextAlignment(.center)
+                    if pinned { Image(systemName: "pin.fill").font(.caption).foregroundStyle(SweepPalette.accent) }
+                }.frame(height: 38, alignment: .top).accessibilityElement(children: .combine)
                 Text(AppText.format("创建：%@", project.createdAt.map { AppText.date($0, dateStyle: .medium, timeStyle: .none) } ?? AppText.string("未知")))
                     .font(.caption).foregroundStyle(.secondary)
                     .help(project.createdAt.map { AppText.format("文件夹创建时间：%@", AppText.date($0, dateStyle: .full, timeStyle: .medium)) } ?? AppText.string("未能读取文件夹创建时间"))
@@ -42,6 +46,9 @@ struct ProjectFolderCard: View {
             .help(project.issue.map(AppText.string) ?? AppText.string("双击打开，或选中后按回车"))
             .onHover { hovered = $0 }
             .simultaneousGesture(TapGesture(count: 2).onEnded { if project.isAvailable { open() } })
-            .contextMenu { Button("深入整理", action: open).disabled(!project.isAvailable) }
+            .contextMenu {
+                Button("深入整理", action: open).disabled(!project.isAvailable)
+                Button(AppText.string(pinned ? "取消置顶" : "置顶项目"), action: togglePin)
+            }
     }
 }

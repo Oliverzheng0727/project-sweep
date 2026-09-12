@@ -26,7 +26,7 @@ struct ProjectOverviewView: View {
                                  ? AppText.itemCount(metric.count) + " · " + (metric.incomplete ? AppText.string("大小不完整") : SweepState.size(metric.bytes))
                                  : AppText.string(state.projectScanActive ? "扫描完成后统计" : "尚未完成扫描"))
                                 .font(.caption).foregroundStyle(.secondary)
-                        }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                        }.padding(10).frame(maxWidth: .infinity, alignment: .leading)
                             .background(SweepPalette.risk(risk).opacity(0.065), in: RoundedRectangle(cornerRadius: 10))
                             .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(selected ? SweepPalette.accent : SweepPalette.border.opacity(0.35)))
                     }.buttonStyle(.plain).disabled(state.busy).accessibilityValue(AppText.string(selected ? "正在筛选" : "未筛选"))

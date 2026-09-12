@@ -50,6 +50,7 @@ struct ProjectTreeRow: Identifiable {
     func status(mode: ProjectMode) -> String {
         if isContext { return "所在目录" }
         if mode == .remove && !isRoot { return "项目内文件" }
+        if mode == .organize && isRoot { return "根目录保留" }
         return item.risk.title
     }
 }

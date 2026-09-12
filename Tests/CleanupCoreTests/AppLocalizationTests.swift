@@ -26,6 +26,8 @@ final class AppLocalizationTests: XCTestCase {
         XCTAssertEqual(AppText.string("文件夹授权已失效，请重新选择。"), "Folder access has expired. Choose the folder again.")
         XCTAssertEqual(AppText.itemCount(1), "1 item")
         XCTAssertEqual(AppText.itemCount(2), "2 items")
+        XCTAssertEqual(AppText.string("已检查当前项目 1 项 · 关联记录尚未检查"),
+                       "Inspected 1 project item · Related Records Not Inspected")
     }
 
     func testSimplifiedChinesePreferencePreservesSourceText() {

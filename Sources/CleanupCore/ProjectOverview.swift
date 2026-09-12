@@ -9,11 +9,14 @@ public struct OverviewMetric: Sendable {
 /// Non-overlapping file units; ordinary parent directory totals are never added again.
 public struct ProjectOverview: Sendable {
     public let units: [CleanupItem]
+    /// Every scanned project entry except the synthetic root row.
+    public let inventoryCount: Int
     public var totalBytes: Int64 { units.reduce(0) { $0 + $1.bytes } }
     public var isComplete: Bool { !units.contains { $0.risk == .unavailable || $0.snapshot == nil } }
 
     public init(items: [CleanupItem]) {
         let project = items.filter { $0.tool == nil }
+        inventoryCount = project.filter { $0.path != $0.rootPath }.count
         let parents = Set(project.compactMap(\.parentPath))
         let ordered = project.sorted { $0.path.count < $1.path.count }
         var absorbing: Set<String> = []

@@ -33,7 +33,11 @@ struct ToolsView: View {
                         .disabled(state.busy || state.executing)
                 }.padding(12).background(.orange.opacity(0.07), in: RoundedRectangle(cornerRadius: 10))
             }
-            ItemBrowser(state: state, toolMode: true)
+            if state.configurations.isEmpty {
+                ToolDataEmptyView(title: "尚未连接工具数据", message: "请为 Codex、Claude Code 或 Cursor 单独选择本地数据目录。")
+            } else {
+                ItemBrowser(state: state, toolMode: true)
+            }
         }.padding(28).disabled(state.executing)
     }
 }

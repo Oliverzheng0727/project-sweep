@@ -8,16 +8,16 @@ struct ProjectDetailView: View {
     private var projectBytes: Int64 { projectItems.first { $0.path == root.path }?.bytes ?? 0 }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Button("返回项目库", systemImage: "chevron.left", action: state.backToLibrary).buttonStyle(.plain).foregroundStyle(.secondary)
                 Spacer()
                 Button("重新深入扫描", systemImage: "arrow.clockwise", action: state.scanProject).disabled(state.busy)
             }
-            HStack(alignment: .top, spacing: 17) {
-                Image(systemName: "square.stack.3d.up.fill").font(.system(size: 42, weight: .light)).foregroundStyle(SweepPalette.accent).accessibilityHidden(true)
+            HStack(alignment: .top, spacing: 14) {
+                Image(systemName: "square.stack.3d.up.fill").font(.system(size: 36, weight: .light)).foregroundStyle(SweepPalette.accent).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(root.lastPathComponent).font(.largeTitle.weight(.semibold))
+                    Text(root.lastPathComponent).font(.title.weight(.semibold))
                     Text(root.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled).lineLimit(1).truncationMode(.middle)
                 }
                 Spacer()
@@ -25,7 +25,7 @@ struct ProjectDetailView: View {
                     Text(state.filesScanned ? (state.projectOverview.isComplete ? SweepState.size(projectBytes) : AppText.string("大小不完整")) : state.projectScanActive ? AppText.string("扫描中") : AppText.string("尚未完成扫描")).font(.title2.monospacedDigit())
                     Text(state.projectScanActive
                          ? AppText.format("已检查 %lld 项", Int64(state.projectScanProgress?.count ?? 0))
-                         : AppText.fileCount(projectItems.count) + " · " + AppText.string(state.associationSummary))
+                         : AppText.fileCount(state.projectOverview.inventoryCount) + " · " + AppText.string(state.associationSummary))
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
@@ -47,9 +47,13 @@ struct ProjectDetailView: View {
                 ItemBrowser(state: state, toolMode: false, scope: .projectFiles)
             } else {
                 ProjectConnectionsView(state: state)
-                ItemBrowser(state: state, toolMode: true, scope: .relatedRecords)
+                if state.configurations.isEmpty {
+                    ToolDataEmptyView(title: state.associationEmptyTitle, message: state.associationEmptyMessage)
+                } else {
+                    ItemBrowser(state: state, toolMode: true, scope: .relatedRecords)
+                }
             }
-        }.padding(28)
+        }.padding(24)
     }
 }
 
@@ -70,7 +74,7 @@ private struct ProjectModeCard: View {
                 }
                 Spacer(minLength: 0)
                 Image(systemName: selected ? "largecircle.fill.circle" : "circle").foregroundStyle(selected ? SweepPalette.accent : .secondary)
-            }.padding(14).frame(maxWidth: .infinity, alignment: .leading)
+            }.padding(11).frame(maxWidth: .infinity, alignment: .leading)
                 .background(selected ? SweepPalette.accent.opacity(0.08) : SweepPalette.surface, in: RoundedRectangle(cornerRadius: 12))
                 .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(selected ? SweepPalette.accent.opacity(0.6) : SweepPalette.border.opacity(0.35)))
         }.buttonStyle(.plain).accessibilityLabel(AppText.string(title)).accessibilityValue(AppText.string(selected ? "已选择" : "未选择"))

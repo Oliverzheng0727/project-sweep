@@ -23,3 +23,6 @@ swiftc "${COMMON[@]}" Sources/ProjectSweepApp/FolderGrants.swift Sources/Project
 
 swiftc "${COMMON[@]}" Sources/ProjectSweepApp/PreviewSafety.swift Sources/ProjectSweepApp/FolderGrants.swift Sources/ProjectSweepApp/BrowserState.swift Sources/ProjectSweepApp/ProjectTree.swift Sources/ProjectSweepApp/ToolInspection.swift Sources/ProjectSweepApp/SkillManagementState.swift Sources/ProjectSweepApp/SweepState.swift Tests/Acceptance/ProjectTreeChecks.swift "${CORE_OBJECTS[@]}" -o "$CHECK_DIR/project-tree-checks"
 "$CHECK_DIR/project-tree-checks"
+
+swiftc "${COMMON[@]}" Sources/ProjectSweepApp/BrowserState.swift Tests/Acceptance/ProjectLibraryFilterChecks.swift "${CORE_OBJECTS[@]}" -o "$CHECK_DIR/project-library-filter-checks"
+"$CHECK_DIR/project-library-filter-checks"

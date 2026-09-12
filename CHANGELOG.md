@@ -2,6 +2,15 @@
 
 All notable user-visible changes are documented here.
 
+## [0.4.1] - 2026-09-12
+
+- Refresh the whole navigation interface immediately when switching between English and Simplified Chinese.
+- Make project inventory totals exclude the synthetic root row and label the kept root explicitly.
+- Add persistent project filters for recent, scanned, cached, and unavailable entries, plus project pinning.
+- Detect standard Codex, Claude Code, and Cursor data locations in a guided setup view while keeping authorization separate.
+- Remove empty search and cleanup controls before any tool data directory has been connected.
+- Reduce vertical space in project detail so the file tree remains useful at the minimum window size.
+
 ## [0.4.0] - 2026-09-11
 
 - Add a complete English interface alongside Simplified Chinese, with an immediate in-app language switch and a follow-system option.
@@ -36,5 +45,6 @@ All notable user-visible changes are documented here.
 - Add adapters for supported Codex and Claude Code local data plus read-only Cursor session handling.
 - Protect Git-tracked content, tool configuration, skills, document packages, symbolic-link boundaries, and user keep rules.
 
+[0.4.1]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.4.1
 [0.4.0]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.4.0
 [0.3.3]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.3.3

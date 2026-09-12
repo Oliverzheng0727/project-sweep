@@ -36,3 +36,59 @@ struct ProjectScanSummary {
     var scannedAt: Date
     var snapshot: FileSnapshot
 }
+
+enum ProjectLibraryFilter: String, CaseIterable, Identifiable {
+    case all, recent, scanned, withCache, unavailable
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .all: "全部项目"
+        case .recent: "最近打开"
+        case .scanned: "已扫描"
+        case .withCache: "包含缓存"
+        case .unavailable: "不可用"
+        }
+    }
+}
+
+struct ProjectLibraryQuery {
+    var search = ""
+    var filter: ProjectLibraryFilter = .all
+    var newestFirst = false
+
+    func apply(to projects: [ProjectDirectory], summaries: [String: ProjectScanSummary],
+               recentPaths: [String], pinnedPaths: Set<String>) -> [ProjectDirectory] {
+        let recentRanks = Dictionary(uniqueKeysWithValues: recentPaths.enumerated().map { ($0.element, $0.offset) })
+        func summary(for project: ProjectDirectory) -> ProjectScanSummary? {
+            guard let value = summaries[project.path], value.snapshot.device == project.snapshot.device,
+                  value.snapshot.inode == project.snapshot.inode else { return nil }
+            return value
+        }
+        return projects.filter { project in
+            let matchesSearch = search.isEmpty || project.title.localizedStandardContains(search)
+                || project.path.localizedStandardContains(search)
+            guard matchesSearch else { return false }
+            switch filter {
+            case .all: return true
+            case .recent: return recentRanks[project.path] != nil
+            case .scanned: return summary(for: project) != nil
+            case .withCache: return (summary(for: project)?.cacheBytes ?? 0) > 0
+            case .unavailable: return !project.isAvailable
+            }
+        }.sorted { left, right in
+            let leftPinned = pinnedPaths.contains(left.path)
+            let rightPinned = pinnedPaths.contains(right.path)
+            if leftPinned != rightPinned { return leftPinned }
+            if filter == .recent {
+                let leftRank = recentRanks[left.path] ?? .max
+                let rightRank = recentRanks[right.path] ?? .max
+                if leftRank != rightRank { return leftRank < rightRank }
+            }
+            if newestFirst, left.createdAt != right.createdAt {
+                return (left.createdAt ?? .distantPast) > (right.createdAt ?? .distantPast)
+            }
+            return left.title.localizedStandardCompare(right.title) == .orderedAscending
+        }
+    }
+}
