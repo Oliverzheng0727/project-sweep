@@ -10,6 +10,7 @@ All notable user-visible changes are documented here.
 - Detect standard Codex, Claude Code, and Cursor data locations in a guided setup view while keeping authorization separate.
 - Remove empty search and cleanup controls before any tool data directory has been connected.
 - Reduce vertical space in project detail so the file tree remains useful at the minimum window size.
+- Validate the official `thread/delete` flow against an installed Codex CLI 0.147.0 in an isolated temporary `CODEX_HOME`.
 
 ## [0.4.0] - 2026-09-11
 

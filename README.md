@@ -166,7 +166,7 @@ This version does not edit Codex configuration to disable shared originals or un
 
 ## Development and validation
 
-The core and UI checks are included in the build commands above. The current 0.4.1 acceptance record reports **95 passing core tests, 47 passing UI state checks, and 581 English localization entries checked for coverage and duplicate keys**. Native interface checks used generated projects. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
+The core and UI checks are included in the build commands above. The current 0.4.1 acceptance record reports **95 passing core tests, including the installed Codex protocol check, 47 passing UI state checks, and 581 English localization entries checked for coverage and duplicate keys**. Native interface checks used generated projects. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
 
 The actual Codex protocol test is optional and skipped unless you provide a local CLI path:
 
@@ -175,6 +175,8 @@ PROJECT_SWEEP_TEST_CODEX=/absolute/path/to/codex swift test
 ```
 
 It creates and deletes test sessions only in a temporary, isolated `CODEX_HOME`, without calling a model or touching normal tool directories.
+
+Project Sweep 0.4.1 passed this check with the locally installed **Codex CLI 0.147.0**: the test started the official app-server, created two isolated threads, deleted one through `thread/delete`, verified that the other remained readable, and confirmed that the deleted thread could no longer be read.
 
 An optional performance benchmark requires Python 3:
 
