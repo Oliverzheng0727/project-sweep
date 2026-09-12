@@ -9,7 +9,7 @@
 
 原生中英文双语 Mac App，用于整理 AI 开发、文档、PPT、图片、视频项目留下的文件，以及受支持工具的本地数据。应用自身不接入 AI，不需要 API Key，不下载模型。
 
-**[下载 Project Sweep 0.4.1](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [查看更新记录](CHANGELOG.md)
+**[下载 Project Sweep 0.4.2](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [查看更新记录](CHANGELOG.md)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/project-cleanup-dark.png">
@@ -26,7 +26,7 @@ _截图为无损 Retina PNG，使用生成的演示数据和不含个人信息�
 
 ## 运行与使用
 
-当前版本 **0.4.1**，面向 Apple Silicon、macOS 14 及以上，使用本机临时签名；尚未公证或用于商店发布。从源码构建后，可将 `dist/ProjectSweep-macOS-arm64.zip` 解压到本机应用程序目录运行。
+当前版本 **0.4.2**，面向 Apple Silicon、macOS 14 及以上，使用本机临时签名；尚未公证或用于商店发布。从源码构建后，可将 `dist/ProjectSweep-macOS-arm64.zip` 解压到本机应用程序目录运行。
 
 构建同时生成 `dist/Project Sweep.app`。如果工作区在 iCloud 等同步目录中，同步服务可能为应用补写 Finder 属性并干扰签名校验；ZIP 在独立临时目录完成签名与归档，不受这类属性回写影响。
 
@@ -57,7 +57,7 @@ _截图为无损 Retina PNG，使用生成的演示数据和不含个人信息�
 
 ## 工具支持范围
 
-每个工具必须在项目的「关联记录」页或「工具数据」页面单独授权数据目录，也可选择自定义目录。设置向导会在授权前检测标准本地位置，并始终分别管理 Codex、Claude Code 和 Cursor 的权限。项目归属来自本地记录中的明确路径，无法确认时保持只读或单独列出。
+打开「工具数据」或项目的「关联记录」页时，应用会自动检索并扫描 Codex、Claude Code 和 Cursor 已存在的标准数据目录。只检查下表三个固定位置，不遍历整个用户目录或其他项目，也不接受符号链接根目录。每个 AI 仍可单独选择自定义位置；手动断开后会保持断开，直到用户再次手动连接。项目归属来自本地记录中的明确路径，无法确认时保持只读或单独列出。
 
 工具卡片及关联记录分组显示 Codex、Claude、Cursor 的标识，图片随应用打包，离线可显示；文字名称和辅助功能标签继续保留。资源来源见 [工具标识来源](docs/tool-logo-sources.zh-CN.md)。
 
@@ -67,7 +67,7 @@ _截图为无损 Retina PNG，使用生成的演示数据和不含个人信息�
 | Claude Code | `~/.claude` | 支持可明确关联的 UUID 会话 JSONL、版本 1 会话索引、历史索引及对应子代理/快照等目录。保留未选会话和项目记忆。旧版无法归属的代理、共享计划或未知格式保持只读。 |
 | Cursor | `~/Library/Application Support/Cursor` | 明确缓存和日志可清理；已知 Composer 元数据可只读列出。**会话删除始终禁用**，须安装实际版本并完成兼容性验收后开发启用。 |
 
-Project Sweep 0.4.1 已使用本机安装的 **Codex CLI 0.147.0** 完成实际协议验收：在独立临时 `CODEX_HOME` 中启动官方 app-server，创建两个测试线程，通过 `thread/delete` 删除其中一个，确认另一个仍可读取且被删线程无法再读取。测试没有调用模型，也没有访问或删除用户正常会话。
+Project Sweep 0.4.2 已使用本机安装的 **Codex CLI 0.147.0** 完成实际协议验收：在独立临时 `CODEX_HOME` 中启动官方 app-server，创建两个测试线程，通过 `thread/delete` 删除其中一个，确认另一个仍可读取且被删线程无法再读取。测试没有调用模型，也没有访问或删除用户正常会话。
 
 项目总目录和工具记录目录是独立的授权入口；例如桌面的 `Claude` 用来放项目，`~/.claude` 用来保存 Claude Code 本地记录。
 
@@ -105,7 +105,7 @@ Claude 会话使用临时事务保存中断恢复所需的数据，成功后清�
 - 扫描可取消。执行前复核文件身份、所在范围、修改状态、Git 跟踪和占用情况；目录内容改变后要求重新扫描。
 - 「始终保留」规则也保护上层目录，防止通过整目录选择绕过保护。
 - 清理记录只保存路径、动作、状态、大小、时间和校验定位信息，不保存聊天正文。位置为 `~/Library/Application Support/ProjectSweep/operations.json`。
-- 文件夹书签、保留规则、Codex 路径、网格/列表和主题偏好保存在本地设置中；扫描摘要只留在内存。没有账号、遥测、后台自动清理或外部服务。本次更新不迁移清理记录存储格式。
+- 文件夹书签、手动断开的默认工具、保留规则、Codex 路径、网格/列表和主题偏好保存在本地设置中；扫描摘要只留在内存。没有账号、遥测、后台自动清理或外部服务。本次更新不迁移清理记录存储格式。
 
 ## 源码与构建
 

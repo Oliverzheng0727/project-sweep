@@ -6,7 +6,7 @@ struct ToolsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text("AI 工具的本地足迹").font(.largeTitle.weight(.semibold))
-            Text("为每个工具单独选择数据文件夹。会话按工具与项目分组，项目记忆独立保护。")
+            Text("自动检索标准工具目录，也可以为每个工具单独选择自定义位置。会话按工具与项目分组，项目记忆独立保护。")
                 .foregroundStyle(.secondary)
             HStack(alignment: .top, spacing: 12) {
                 ForEach(ToolKind.allCases) { tool in
@@ -17,8 +17,9 @@ struct ToolsView: View {
                 Label("Cursor 会话删除未开放：尚未通过实际安装版本与数据库格式验证。", systemImage: "lock.shield")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Button("扫描已授权目录", systemImage: "magnifyingglass", action: state.scanTools)
-                    .disabled(state.configurations.isEmpty || state.busy)
+                Button("重新检索并扫描", systemImage: "arrow.clockwise") {
+                    state.discoverDefaultTools(scanAfterDiscovery: true)
+                }.disabled(state.busy)
             }
             if state.claudeRecoveryAvailable {
                 HStack(alignment: .top) {

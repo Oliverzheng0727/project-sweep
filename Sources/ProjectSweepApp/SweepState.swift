@@ -19,7 +19,10 @@ final class SweepState: ObservableObject {
             invalidate(); items = []; warnings = []
             skills.cancel()
             if page == .project, isProjectOpen { scanProject() }
-            if page == .tools { resetToolInspections() }
+            if page == .tools {
+                resetToolInspections()
+                discoverDefaultTools(scanAfterDiscovery: true)
+            }
         }
     }
     @Published var libraryRoot: URL?
@@ -76,6 +79,9 @@ final class SweepState: ObservableObject {
     private var currentOutcomes: [UUID: CleanupRecord] = [:]
     private var previewTask: Task<Void, Never>?
     @Published var configurations: [ToolConfiguration] = []
+    private var ignoredDefaultTools: Set<String> = [] {
+        didSet { preferences.set(Array(ignoredDefaultTools), forKey: "ignoredDefaultTools") }
+    }
     @Published var keepPaths: Set<String> = []
     @Published var codexExecutable = "" { didSet { preferences.set(codexExecutable, forKey: "codexExecutable") } }
     private let grants: FolderGrants
@@ -93,6 +99,7 @@ final class SweepState: ObservableObject {
         self.libraryFilter = ProjectLibraryFilter(rawValue: preferences.string(forKey: "libraryFilter") ?? "") ?? .all
         self.pinnedProjectPaths = Set(preferences.stringArray(forKey: "pinnedProjectPaths") ?? [])
         self.recentProjectPaths = preferences.stringArray(forKey: "recentProjectPaths") ?? []
+        self.ignoredDefaultTools = Set(preferences.stringArray(forKey: "ignoredDefaultTools") ?? [])
         self.prefersProjectTree = preferences.object(forKey: "projectFileTree") as? Bool ?? true
         self.grants = FolderGrants(defaults: preferences)
         guard restorePreferences else {
@@ -192,6 +199,7 @@ final class SweepState: ObservableObject {
         guard let url = pickFolder(message: "独立授权 \(tool.title) 的本地数据根目录（可选自定义位置）", initial: tool.defaultRoot) else { return }
         do {
             let root = try grants.grant(url, key: tool.rawValue)
+            ignoredDefaultTools.remove(tool.rawValue)
             configurations.removeAll { $0.tool == tool }
             configurations.append(ToolConfiguration(tool: tool, root: root))
             invalidate(); resetToolInspections(); items = []
@@ -200,10 +208,38 @@ final class SweepState: ObservableObject {
     }
     func disconnectTool(_ tool: ToolKind) {
         guard !executing else { return }
+        ignoredDefaultTools.insert(tool.rawValue)
         invalidate(); grants.revoke(tool.rawValue)
         configurations.removeAll { $0.tool == tool }; toolInspections.removeValue(forKey: tool); items = []; warnings = []
         if page == .project, isProjectOpen { scanProject() }
         else { resetToolInspections(); status = "已断开 \(tool.title)，原记录保持不变" }
+    }
+    @discardableResult
+    func discoverDefaultTools(at roots: [ToolKind: URL]? = nil, scanAfterDiscovery: Bool = true) -> Int {
+        guard !busy, !executing else { return 0 }
+        let candidates = roots ?? Dictionary(uniqueKeysWithValues: ToolKind.allCases.map { ($0, $0.defaultRoot) })
+        var discovered = 0
+        for tool in ToolKind.allCases {
+            guard !configurations.contains(where: { $0.tool == tool }),
+                  !ignoredDefaultTools.contains(tool.rawValue),
+                  let candidate = candidates[tool] else { continue }
+            do {
+                let values = try candidate.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+                guard values.isDirectory == true, values.isSymbolicLink != true else { continue }
+                let root = try grants.grant(candidate, key: tool.rawValue)
+                configurations.append(ToolConfiguration(tool: tool, root: root))
+                discovered += 1
+            } catch {
+                // Missing or inaccessible defaults remain disconnected; users can still choose a custom location.
+            }
+        }
+        resetToolInspections()
+        if scanAfterDiscovery {
+            if page == .tools, !configurations.isEmpty { scanTools() }
+            else if page == .project, isProjectOpen, discovered > 0 { scanProject() }
+            else if configurations.isEmpty { status = "未在标准位置找到可用的工具数据目录" }
+        }
+        return discovered
     }
     private func pickFolder(message: String, initial: URL? = nil) -> URL? {
         let panel = NSOpenPanel()
@@ -286,7 +322,7 @@ final class SweepState: ObservableObject {
         }
     }
     func scanTools() {
-        guard !executing else { return }
+        guard !executing, !configurations.isEmpty else { return }
         invalidate(); items = []; warnings = []; busy = true; status = "正在检查已授权的工具…"
         let token = generation
         let configs = currentConfigurations

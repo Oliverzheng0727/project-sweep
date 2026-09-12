@@ -11,9 +11,9 @@ A native macOS app for safely cleaning up AI-assisted projects, local tool data,
 
 Project Sweep runs locally. It does not connect to an AI service, require an API key, or download a model. It supports code, documents, presentations, images, video, and mixed projects.
 
-**Version:** 0.4.1 · **Platform:** Apple Silicon, macOS 14+ · **App interface:** English and Simplified Chinese
+**Version:** 0.4.2 · **Platform:** Apple Silicon, macOS 14+ · **App interface:** English and Simplified Chinese
 
-**[Download Project Sweep 0.4.1](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [View the changelog](CHANGELOG.md)
+**[Download Project Sweep 0.4.2](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [View the changelog](CHANGELOG.md)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/project-cleanup-dark.png">
@@ -115,7 +115,7 @@ The workflow is **scan → select → review → execute → inspect results**. 
 
 ## AI tool support
 
-Authorize each tool's data directory independently on the tool-data page or the project's related-records page. The setup guide detects standard local folders before authorization, and custom locations remain supported. Project associations use explicit paths or tool metadata; uncertain associations remain read-only or appear separately.
+Opening the tool-data page or a project's related-records page automatically discovers and scans existing standard data folders for Codex, Claude Code, and Cursor. Discovery checks only the three fixed paths listed below; it does not crawl the home folder or other projects. Symbolic-link roots are skipped. Custom locations remain available through each tool's folder picker, and disconnecting a standard location keeps that tool disconnected until you reconnect it manually. Project associations use explicit paths or tool metadata; uncertain associations remain read-only or appear separately.
 
 | Tool | Typical local directory | Current support |
 | --- | --- | --- |
@@ -162,11 +162,11 @@ This version does not edit Codex configuration to disable shared originals or un
 - Execution rechecks file identity, scope, modifications, Git tracking, and file use. Changed directory contents require a new scan.
 - Always Keep also protects ancestor folders, preventing removal through a parent-folder selection.
 - Cleanup records store paths, actions, status, size, time, and verification metadata, not conversation text. They are stored at `~/Library/Application Support/ProjectSweep/operations.json`.
-- Folder bookmarks, keep rules, the Codex path, view, language, and appearance preferences are stored locally. Scan summaries live only in memory. There are no accounts, telemetry, automatic background cleanup, or external services.
+- Folder bookmarks, explicitly disconnected standard tools, keep rules, the Codex path, view, language, and appearance preferences are stored locally. Scan summaries live only in memory. There are no accounts, telemetry, automatic background cleanup, or external services.
 
 ## Development and validation
 
-The core and UI checks are included in the build commands above. The current 0.4.1 acceptance record reports **95 passing core tests, including the installed Codex protocol check, 47 passing UI state checks, and 581 English localization entries checked for coverage and duplicate keys**. Native interface checks used generated projects. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
+The core and UI checks are included in the build commands above. The current 0.4.2 acceptance record reports **95 passing core tests, including the installed Codex protocol check, 48 passing UI state checks, and 586 English localization entries checked for coverage and duplicate keys**. Native interface checks used generated projects. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
 
 The actual Codex protocol test is optional and skipped unless you provide a local CLI path:
 
@@ -176,7 +176,7 @@ PROJECT_SWEEP_TEST_CODEX=/absolute/path/to/codex swift test
 
 It creates and deletes test sessions only in a temporary, isolated `CODEX_HOME`, without calling a model or touching normal tool directories.
 
-Project Sweep 0.4.1 passed this check with the locally installed **Codex CLI 0.147.0**: the test started the official app-server, created two isolated threads, deleted one through `thread/delete`, verified that the other remained readable, and confirmed that the deleted thread could no longer be read.
+Project Sweep 0.4.2 passed this check with the locally installed **Codex CLI 0.147.0**: the test started the official app-server, created two isolated threads, deleted one through `thread/delete`, verified that the other remained readable, and confirmed that the deleted thread could no longer be read.
 
 An optional performance benchmark requires Python 3:
 

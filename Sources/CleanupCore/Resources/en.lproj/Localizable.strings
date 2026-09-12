@@ -598,6 +598,11 @@
 "完成" = "Done";
 "尚未连接工具数据" = "No Tool Data Connected";
 "请为 Codex、Claude Code 或 Cursor 单独选择本地数据目录。" = "Choose a local data folder separately for Codex, Claude Code, or Cursor.";
+"自动检索标准工具目录，也可以为每个工具单独选择自定义位置。会话按工具与项目分组，项目记忆独立保护。" = "Standard tool folders are discovered automatically, and each tool can still use a custom location. Sessions are grouped by tool and project; project memory stays protected.";
+"重新检索并扫描" = "Discover and Scan Again";
+"未在标准位置找到可用的工具数据目录" = "No usable tool data folders were found in the standard locations";
+"标准位置会自动连接；也可以为每个 AI 选择自定义位置。" = "Standard locations connect automatically; you can also choose a custom location for each AI tool.";
+"手动更换或连接自定义目录时，系统会打开文件夹选择器。" = "When you replace a location or connect a custom folder manually, macOS opens the folder picker.";
 
 /* Tool file and database safety */
 "不进入工具目录中的文档或应用包" = "Document and app packages in tool folders are not expanded";

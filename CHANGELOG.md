@@ -2,6 +2,13 @@
 
 All notable user-visible changes are documented here.
 
+## [0.4.2] - 2026-09-12
+
+- Discover and scan existing standard Codex, Claude Code, and Cursor data folders automatically when opening tool data.
+- Keep discovery bounded to three fixed local paths, skip symbolic-link roots, and preserve custom folder selection.
+- Remember an explicit disconnect so a standard tool is not reconnected automatically.
+- Add a one-click discover-and-scan action and update the bilingual setup copy.
+
 ## [0.4.1] - 2026-09-12
 
 - Refresh the whole navigation interface immediately when switching between English and Simplified Chinese.
@@ -46,6 +53,7 @@ All notable user-visible changes are documented here.
 - Add adapters for supported Codex and Claude Code local data plus read-only Cursor session handling.
 - Protect Git-tracked content, tool configuration, skills, document packages, symbolic-link boundaries, and user keep rules.
 
+[0.4.2]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.4.2
 [0.4.1]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.4.1
 [0.4.0]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.4.0
 [0.3.3]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.3.3

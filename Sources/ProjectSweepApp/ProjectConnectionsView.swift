@@ -26,6 +26,11 @@ struct ProjectConnectionsView: View {
             Text("连接的是工具记录目录（例如 ~/.claude），与存放作品的 Claude 文件夹分开授权。历史不备份，项目记忆保留。")
                 .font(.caption).foregroundStyle(.secondary)
         }.sheet(isPresented: $showingSetup) { ToolDataSetupView(state: state) }
+            .onAppear {
+                if state.configurations.isEmpty {
+                    state.discoverDefaultTools(scanAfterDiscovery: true)
+                }
+            }
     }
 }
 
@@ -48,7 +53,7 @@ private struct ToolDataSetupView: View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(AppText.string("工具数据设置")).font(.title2.weight(.semibold))
-                Text(AppText.string("自动检测默认位置，并为每个 AI 单独授权。"))
+                Text(AppText.string("标准位置会自动连接；也可以为每个 AI 选择自定义位置。"))
                     .foregroundStyle(.secondary)
             }
             ForEach(ToolKind.allCases) { tool in
@@ -71,7 +76,7 @@ private struct ToolDataSetupView: View {
                     .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(SweepPalette.border.opacity(0.4), lineWidth: 0.5))
             }
             HStack {
-                Text(AppText.string("系统会在授权窗口中再次确认目录。")).font(.caption).foregroundStyle(.secondary)
+                Text(AppText.string("手动更换或连接自定义目录时，系统会打开文件夹选择器。")).font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 Button(AppText.string("完成")) { dismiss() }.keyboardShortcut(.defaultAction)
             }
