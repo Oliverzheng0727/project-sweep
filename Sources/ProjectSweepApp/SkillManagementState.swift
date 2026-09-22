@@ -2,11 +2,18 @@ import AppKit
 import CleanupCore
 import SwiftUI
 
+enum SkillViewMode: String, CaseIterable {
+    case list, relationships
+    var title: String { self == .list ? "技能列表" : "关联关系" }
+}
+
 @MainActor
 final class SkillManagementState: ObservableObject {
+    @Published var viewMode: SkillViewMode = .list { didSet { preferences.set(viewMode.rawValue, forKey: "skillViewMode") } }
     @Published var tool: ToolKind = .claude { didSet { if tool != oldValue { selected = []; inspectedID = nil; review = nil } } }
     @Published private(set) var roots: [SkillRoot] = []
     @Published private(set) var entries: [SkillEntry] = []
+    @Published private(set) var relationshipInventory: SkillRelationshipInventory?
     @Published private(set) var warnings: [String] = []
     @Published private(set) var scanning = false
     @Published private(set) var scanned = false
@@ -31,6 +38,7 @@ final class SkillManagementState: ObservableObject {
     init(preferences: UserDefaults = .standard, restorePreferences: Bool = true, discovery: SkillDiscovery? = SkillDiscovery()) {
         self.preferences = preferences; grants = FolderGrants(defaults: preferences)
         self.discovery = discovery
+        if restorePreferences, let savedMode = preferences.string(forKey: "skillViewMode"), let mode = SkillViewMode(rawValue: savedMode) { viewMode = mode }
         guard restorePreferences, let data = preferences.data(forKey: "skillSources"),
               let saved = try? JSONDecoder().decode([SkillRoot].self, from: data) else { return }
         for var root in saved {
@@ -59,6 +67,13 @@ final class SkillManagementState: ObservableObject {
         }.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
     var inspected: SkillEntry? { entries.first { $0.id == inspectedID } }
+    var visibleRelationships: [SkillRelationship] {
+        (relationshipInventory?.relationships ?? []).filter { relationship in
+            search.isEmpty || ([relationship.name, relationship.originalPath]
+                + relationship.entries.flatMap { [$0.name, $0.url.path, $0.root.tool.title, AppText.string($0.source)] })
+                .joined(separator: " ").localizedCaseInsensitiveContains(search)
+        }
+    }
     var hiddenSelectionCount: Int { selected.subtracting(visible.map(\.id)).count }
     var selectedBytes: Int64 { entries.filter { selected.contains($0.id) }.reduce(0) { $0 + ($1.bytes ?? 0) } }
 
@@ -119,6 +134,7 @@ final class SkillManagementState: ObservableObject {
                 let result = try await SkillCatalog().scan(roots, priorWarnings: authorizationWarnings + (found?.warnings ?? []))
                 guard !Task.isCancelled, token == generation else { return }
                 entries = result.entries; warnings = result.warnings; scanning = false; scanned = true
+                relationshipInventory = SkillRelationshipInventory(scan: result)
                 status = roots.isEmpty && result.complete ? "未在默认位置发现技能，可添加自定义目录。"
                     : "已找到 \(entries.count) 项 · \(result.complete ? "技能来源检查完成" : "检查未完整完成")"
             } catch {
@@ -131,6 +147,7 @@ final class SkillManagementState: ObservableObject {
         task?.cancel(); task = nil; generation = UUID()
         if scanning { status = "技能扫描已取消" }
         scanning = false; selected = []; review = nil; inspectedID = nil
+        relationshipInventory = nil
     }
     func toggle(_ entry: SkillEntry) {
         guard !scanning, entry.selectable, entry.root.tool == tool, entries.contains(where: { $0.id == entry.id }) else { return }

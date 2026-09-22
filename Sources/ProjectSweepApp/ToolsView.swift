@@ -4,8 +4,7 @@ import SwiftUI
 struct ToolsView: View {
     @ObservedObject var state: SweepState
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Text("AI 工具的本地足迹").font(.largeTitle.weight(.semibold))
+        VStack(alignment: .leading, spacing: 12) {
             Text("自动检索标准工具目录，也可以为每个工具单独选择自定义位置。会话按工具与项目分组，项目记忆独立保护。")
                 .foregroundStyle(.secondary)
             HStack(alignment: .top, spacing: 12) {
@@ -16,10 +15,6 @@ struct ToolsView: View {
             HStack {
                 Label("Cursor 会话删除未开放：尚未通过实际安装版本与数据库格式验证。", systemImage: "lock.shield")
                     .font(.caption).foregroundStyle(.secondary)
-                Spacer()
-                Button("重新检索并扫描", systemImage: "arrow.clockwise") {
-                    state.discoverDefaultTools(scanAfterDiscovery: true)
-                }.disabled(state.busy)
             }
             if state.claudeRecoveryAvailable {
                 HStack(alignment: .top) {
@@ -40,7 +35,10 @@ struct ToolsView: View {
             } else {
                 ItemBrowser(state: state, toolMode: true)
             }
-        }.padding(28).disabled(state.executing)
+        }.padding(18).disabled(state.executing)
+            .searchable(text: Binding(get: { state.filters(for: .all).search }, set: { value in
+                var filters = state.filters(for: .all); filters.search = value; state.setFilters(filters, for: .all)
+            }), placement: .toolbar, prompt: Text("搜索名称或路径"))
     }
 }
 

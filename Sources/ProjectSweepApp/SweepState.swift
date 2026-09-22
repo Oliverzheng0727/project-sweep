@@ -26,6 +26,9 @@ final class SweepState: ObservableObject {
         }
     }
     @Published var libraryRoot: URL?
+    @Published private(set) var libraryLocations: [ProjectLibraryLocation] = []
+    @Published private(set) var activeLibraryID: String?
+    var activeLibrary: ProjectLibraryLocation? { libraryLocations.first { $0.id == activeLibraryID } }
     @Published var catalog: ProjectCatalogResult?
     @Published var librarySearch = ""
     @Published var librarySelection: String?
@@ -92,6 +95,9 @@ final class SweepState: ObservableObject {
     @Published var review: CleanupPlan?
     @Published var records: [CleanupRecord] = []
     @Published var recordWarning: String?
+    @Published var restoreReview: RestorePlan?
+    @Published private(set) var restoreReport: RestoreReport?
+    var recordBatches: [CleanupBatch] { CleanupBatch.group(records) }
     @Published var previewURL: URL?
     private var currentOutcomes: [UUID: CleanupRecord] = [:]
     private var previewTask: Task<Void, Never>?
@@ -102,15 +108,16 @@ final class SweepState: ObservableObject {
     @Published var keepPaths: Set<String> = []
     @Published var codexExecutable = "" { didSet { preferences.set(codexExecutable, forKey: "codexExecutable") } }
     private let grants: FolderGrants
+    private let libraryStore: ProjectLibraryStore
     private let store: RecordStore
     let skills: SkillManagementState
     private var scanTask: Task<Void, Never>?
     private var generation = UUID()
 
     init(store: RecordStore = RecordStore(), restorePreferences: Bool = true, preferences: UserDefaults = .standard,
-         defaultToolRoots: [ToolKind: URL]? = nil) {
+         defaultToolRoots: [ToolKind: URL]? = nil, skillDiscovery: SkillDiscovery? = SkillDiscovery()) {
         self.store = store
-        self.skills = SkillManagementState(preferences: preferences, restorePreferences: restorePreferences)
+        self.skills = SkillManagementState(preferences: preferences, restorePreferences: restorePreferences, discovery: skillDiscovery)
         self.preferences = preferences
         self.defaultToolRoots = defaultToolRoots
         self.libraryListMode = preferences.bool(forKey: "libraryListMode")
@@ -121,13 +128,17 @@ final class SweepState: ObservableObject {
         self.ignoredDefaultTools = Set(preferences.stringArray(forKey: "ignoredDefaultTools") ?? [])
         self.prefersProjectTree = preferences.object(forKey: "projectFileTree") as? Bool ?? true
         self.grants = FolderGrants(defaults: preferences)
+        self.libraryStore = ProjectLibraryStore(defaults: preferences)
         guard restorePreferences else {
             Task { await loadRecords() }
             return
         }
         keepPaths = Set(preferences.stringArray(forKey: "keepPaths") ?? [])
         codexExecutable = preferences.string(forKey: "codexExecutable") ?? ""
-        do { libraryRoot = try grants.resolve("library") } catch { warnings.append("项目库授权不可用，请重新选择总目录。") }
+        let savedLibraries = libraryStore.load(using: grants)
+        libraryLocations = savedLibraries.locations
+        activeLibraryID = savedLibraries.activeID
+        if let activeLibrary, activeLibrary.isAvailable { libraryRoot = URL(fileURLWithPath: activeLibrary.path) }
         do { root = try grants.resolve("project") } catch { warnings.append("项目授权不可用，请重新选择：\(error.localizedDescription)") }
         for tool in ToolKind.allCases {
             do {
@@ -150,30 +161,81 @@ final class SweepState: ObservableObject {
         guard !executing, let url = pickFolder(message: "选择存放多个项目的总目录，例如 Claude 文件夹", initial: libraryRoot) else { return }
         acceptLibrary(url)
     }
-    func acceptLibrary(_ url: URL) {
+    func acceptLibrary(_ url: URL, replacing libraryID: String? = nil) {
         guard !executing else { return }
         do {
-            libraryRoot = try grants.grant(url, key: "library")
-            librarySearch = ""; librarySelection = nil
-            isProjectOpen = false; root = nil; catalog = nil; page = .project
-            loadLibrary()
+            let path = url.standardizedFileURL.resolvingSymlinksInPath().path
+            let duplicate = libraryLocations.first { $0.path == path }
+            let existingID = libraryID.flatMap { id in libraryLocations.first { $0.id == id }?.id }
+            let id = duplicate?.id ?? existingID ?? UUID().uuidString
+            let granted = try grants.grant(url, key: "library.\(id)")
+            let entry = ProjectLibraryLocation(id: id, path: granted.path, availability: .available)
+            if let index = libraryLocations.firstIndex(where: { $0.id == id }) { libraryLocations[index] = entry }
+            else { libraryLocations.append(entry) }
+            selectLibrary(id: id)
         } catch { self.error = error.localizedDescription }
+    }
+    func selectLibrary(id: String) {
+        guard !executing, let index = libraryLocations.firstIndex(where: { $0.id == id }) else { return }
+        resetLibraryNavigation()
+        activeLibraryID = id
+        do {
+            guard let url = try grants.resolve(libraryLocations[index].grantKey) else {
+                throw CocoaError(.fileReadNoPermission)
+            }
+            libraryLocations[index].path = url.path
+            libraryLocations[index].availability = .available
+            libraryLocations[index].message = nil
+            libraryRoot = url
+            libraryStore.save(libraryLocations, activeID: id)
+            loadLibrary()
+        } catch {
+            libraryLocations[index].availability = .unavailable
+            libraryLocations[index].message = "项目库暂不可用，请连接磁盘或重新授权。"
+            libraryStore.save(libraryLocations, activeID: id)
+            status = "项目库暂不可用，请连接磁盘或重新授权。"
+        }
+    }
+    func reconnectLibrary(id: String) {
+        guard !executing, let entry = libraryLocations.first(where: { $0.id == id }),
+              let url = pickFolder(message: "重新授权项目库文件夹", initial: entry.path.isEmpty ? nil : URL(fileURLWithPath: entry.path)) else { return }
+        acceptLibrary(url, replacing: id)
+    }
+    private func resetLibraryNavigation() {
+        invalidate()
+        librarySearch = ""; librarySelection = nil
+        libraryRoot = nil; catalog = nil; root = nil; isProjectOpen = false
+        filesScanned = false; relatedToolsScanned = 0; relatedDiscoveryAttempted = false
+        items = []; warnings = []; error = nil; projectFileWarnings = []; toolScanWarnings = [:]
+        projectTab = .files; page = .project
     }
     func loadLibrary() {
         guard let libraryRoot, !executing else { return }
-        invalidate(); items = []; warnings = []; busy = true; status = "正在列出项目文件夹…"
+        invalidate(); items = []; warnings = []; error = nil; busy = true; status = "正在列出项目文件夹…"
         let token = generation
+        let loadingID = activeLibraryID
         scanTask = Task {
             do {
                 let result = try await ProjectCatalog().list(libraryRoot)
                 guard !Task.isCancelled, token == generation else { return }
                 guard result.rootPath == libraryRoot.path else { throw CleanupError.unsafe("项目库授权已变化，请重新选择。") }
                 catalog = result; busy = false
+                if let index = libraryLocations.firstIndex(where: { $0.id == loadingID }) {
+                    libraryLocations[index].availability = .available
+                    libraryLocations[index].message = nil
+                }
                 status = "找到 \(result.projects.count) 个项目文件夹 · 选中一个项目后开始深入整理"
             } catch {
                 guard token == generation else { return }
                 busy = false
-                if !Task.isCancelled { self.error = error.localizedDescription }
+                if !Task.isCancelled {
+                    if let index = libraryLocations.firstIndex(where: { $0.id == loadingID }) {
+                        libraryLocations[index].availability = .unavailable
+                        libraryLocations[index].message = "无法读取项目库，请刷新或重新授权。"
+                    }
+                    self.libraryRoot = nil; catalog = nil
+                    self.error = error.localizedDescription
+                }
             }
         }
     }
@@ -200,11 +262,15 @@ final class SweepState: ObservableObject {
         if libraryRoot != nil { loadLibrary() }
     }
     func forgetLibrary() {
-        guard !executing else { return }
-        invalidate(); grants.revoke("library")
-        librarySearch = ""; librarySelection = nil; scanSummaries = [:]
-        libraryRoot = nil; catalog = nil; root = nil; isProjectOpen = false
-        items = []; warnings = []; status = "已移除项目库入口，原文件保持不变"
+        guard !executing, let activeLibrary else { return }
+        resetLibraryNavigation()
+        grants.revoke(activeLibrary.grantKey)
+        libraryLocations.removeAll { $0.id == activeLibrary.id }
+        activeLibraryID = libraryLocations.first?.id
+        scanSummaries = scanSummaries.filter { !PathSafety.isWithin($0.key, root: activeLibrary.path) }
+        libraryStore.save(libraryLocations, activeID: activeLibraryID)
+        if let activeLibraryID { selectLibrary(id: activeLibraryID) }
+        else { status = "已移除项目库入口，原文件保持不变" }
     }
     func chooseProject() {
         if let url = pickFolder(message: "选择你要整理的项目文件夹") { acceptProject(url) }
@@ -331,7 +397,7 @@ final class SweepState: ObservableObject {
     func invalidate() {
         scanTask?.cancel(); scanTask = nil; generation = UUID(); busy = false
         projectScanProgress = nil; projectScanStartedAt = nil
-        selected = []; review = nil
+        selected = []; review = nil; restoreReview = nil
         browserFilters = [:]; closeInspector()
         projectTreeExpansion.filteredCollapsedPaths = []
         for tool in toolInspections.keys where toolInspections[tool]?.phase == .scanning || toolInspections[tool]?.phase == .pending {
@@ -533,14 +599,30 @@ final class SweepState: ObservableObject {
         }
     }
     func restore(_ record: CleanupRecord) {
-        executing = true
+        prepareRestore(records: [record])
+    }
+    func prepareRestore(records requested: [CleanupRecord]) {
+        guard !busy, !executing else { return }
+        let requestedIDs = Set(requested.map(\.id))
+        let plan = RestorePlan(records: records.filter { requestedIDs.contains($0.id) })
+        guard !plan.records.isEmpty else {
+            error = "此次操作没有可由应用恢复的文件。历史会话没有备份；已清空或缺少恢复信息的文件请在 Finder 中核实。"
+            return
+        }
+        restoreReview = plan
+    }
+    func executeRestore(_ plan: RestorePlan) {
+        guard !busy, !executing, restoreReview?.id == plan.id, !plan.records.isEmpty else { return }
+        restoreReview = nil
+        executing = true; restoreReport = nil; status = "正在恢复已确认的文件…"
         Task {
-            do {
-                let restored = try await CleanupExecutor(store: store).restore(record)
-                currentOutcomes[restored.id] = restored
-                await loadRecords(); status = "已恢复到原位置"
+            let report = await RestoreExecutor(store: store).execute(plan)
+            for outcome in report.outcomes where outcome.status == .restored {
+                currentOutcomes[outcome.id] = outcome.record
             }
-            catch { self.error = error.localizedDescription }
+            restoreReport = report
+            await loadRecords()
+            status = "恢复完成：\(report.restoredCount) 项已恢复，\(report.outcomes.count - report.restoredCount) 项未恢复"
             executing = false
         }
     }

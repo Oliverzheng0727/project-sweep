@@ -11,25 +11,25 @@ A native macOS app for safely cleaning up AI-assisted projects, local tool data,
 
 Project Sweep runs locally. It does not connect to an AI service, require an API key, or download a model. It supports code, documents, presentations, images, video, and mixed projects.
 
-**Version:** 0.4.3 · **Platform:** Apple Silicon, macOS 14+ · **App interface:** English and Simplified Chinese
+**Version:** 0.5.0 · **Platform:** Apple Silicon, macOS 14+ · **App interface:** English and Simplified Chinese
 
-**[Download Project Sweep 0.4.3](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [View the changelog](CHANGELOG.md)
+**[Download Project Sweep 0.5.0](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [View the changelog](CHANGELOG.md)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/project-cleanup-dark.png">
   <img src="docs/images/project-cleanup-light.png" alt="Project Sweep inspecting a generated project in its hierarchical cleanup view">
 </picture>
 
-_Lossless Retina screenshot using generated demo data and a sanitized shared path._
+_Lossless Retina screenshot from 0.4.x, using generated demo data and a sanitized shared path. Version 0.5.0 moves search and frequent commands into the native toolbar._
 
 ## What you can do
 
-- Browse a project library, then scan one project in depth.
+- Save multiple project libraries in the sidebar, switch between them, and scan one project in depth.
 - Keep finished work while removing selected leftovers, or move an entire project to Trash.
 - Inspect local Codex, Claude Code, and Cursor data within the supported formats below.
-- Manage Claude Code and Codex skills separately, including removing a shared skill's reference without deleting its original files.
+- Manage Claude Code and Codex skills separately, inspect their shared-source relationships, and remove a selected tool's reference without deleting its original files.
 - Preview files with Quick Look, reveal them in Finder, and mark content to always keep.
-- Review cleanup results and restore files from Trash without overwriting existing files.
+- Review results by cleanup operation and restore eligible files individually or as a batch, without overwriting existing files.
 
 ## Install
 
@@ -66,13 +66,17 @@ The interface follows the macOS language by default. In Settings → Language, c
 
 The default appearance follows macOS light and dark modes. Controls, selections, and project highlights use the system accent color, which you can change in System Settings → Appearance. Settings also lets you choose a fixed light or dark appearance.
 
+The native sidebar separates app pages from saved project locations. Search, refresh, view switching, and library actions live in the window toolbar. Project details use a compact header and a resizable inspector so the file tree has more room.
+
 Project cards use the native system folder image, adaptive surfaces, and subtle borders. Sidebar sections and scan categories have distinct semantic colors: green for clear caches and completed operations, orange for manual review and warnings, and purple for protected content. Labels and icons convey these meanings alongside color.
 
 ## Project cleanup
 
 ### Choose a project
 
-Add or drag in a folder that contains your projects, such as a `Claude` folder on your Desktop. The library lists only its immediate project folders; it does not recursively scan every project to populate the home screen.
+Add or drag in a folder that contains your projects, such as a `Claude` folder on your Desktop. Add more locations with **Add Library** in the sidebar; each keeps its own folder access and appears under **Project Locations**. The library lists only its immediate project folders; it does not recursively scan every project to populate the home screen.
+
+The previously saved library migrates automatically. Missing or inaccessible libraries remain listed with retry and reconnect actions. Removing a library entry only removes its saved connection; it does not remove files. Switching libraries clears the previous scan and cleanup selections.
 
 ![Project Sweep project library with generated demo projects](docs/images/project-library-light.png)
 
@@ -107,7 +111,7 @@ Search, sorting, category changes, view changes, and project tab changes preserv
 
 ### Preview, protect, and review
 
-The detail pane shows the path, size, classification reason, and protection information. Eligible local files support system Quick Look, an enlarged preview, Finder reveal, and an Always Keep action. Session details contain metadata and deletion impact rather than conversation content.
+The detail pane shows the path, size, classification reason, and protection information. Drag its divider to adjust the width, or close it to give the file list the full width. Eligible local files support system Quick Look, an enlarged preview, Finder reveal, and an Always Keep action. Session details contain metadata and deletion impact rather than conversation content.
 
 In cleanup mode, Git-tracked files, tool configuration, skills including `.agents/skills`, keep-marked content, and folders containing protected items are protected. Removing a user keep rule does not remove system protection.
 
@@ -155,11 +159,19 @@ Refreshing or reopening the page discovers added or removed sources. Other locat
 | Shared originals | `~/.agents/skills`, `project/.agents/skills` | Read-only. Codex can read these directly, so there may be no separate reference to remove for that tool. Manage them in the original tool. |
 | Plugin, system, and synced skills | `plugins` / `cache`, `.system`, `synced` | Read-only. Disable them in the original tool's plugin or sync settings; the app does not directly delete these caches or system skills. |
 
+Switch to **Relationships** for a read-only view of the original paths and references found across Claude Code and Codex. Each source retains its AI name, source type, and full path. Relationships come only from the current scan; viewing them does not follow links or inspect unverified targets. Missing targets and incomplete source checks are identified explicitly. Counts describe discovered source entries, not enabled skills.
+
 Ownership uses the tool, source, and explicit path; same-name skills are not merged. Shared-reference checks cover connected sources rather than every possible custom loading location or activation state. An original directory stays protected if another source uses it or the relationship check is incomplete. Before execution, the app rechecks sharing, directory identity, access scope, content changes, and file use.
 
 Skill folders and references can be restored from cleanup records. Restoration preserves the original link text and never overwrites a same-name item. Records contain operation locations, not `SKILL.md` content. Skill removal does not change logins, sessions, global settings, or plugin configuration. A tool may need a new session or restart to stop using an already loaded skill. Existing cleanup records remain readable without migration.
 
 This version does not edit Codex configuration to disable shared originals or uninstall entire plugins. References: [Claude Code Skills](https://code.claude.com/docs/en/skills), [Codex Skills](https://learn.chatgpt.com/docs/build-skills).
+
+## Cleanup history and batch restore
+
+Cleanup History groups results by operation and opens the most recent group. You can restore one eligible file or review all eligible files in that operation together. The review shows the original destination and Trash location for every file, and lists excluded sessions separately.
+
+Restore rechecks each record and file before moving it. A conflicting destination is left untouched; the remaining files can still be restored, with a per-item outcome and a summary of anything unfinished. Already restored, incomplete, or unsupported records are excluded from subsequent plans. Session deletion remains irreversible without a separate backup.
 
 ## Safety and local data
 
@@ -168,11 +180,11 @@ This version does not edit Codex configuration to disable shared originals or un
 - Execution rechecks file identity, scope, modifications, Git tracking, and file use. Changed directory contents require a new scan.
 - Always Keep also protects ancestor folders, preventing removal through a parent-folder selection.
 - Cleanup records store paths, actions, status, size, time, and verification metadata, not conversation text. They are stored at `~/Library/Application Support/ProjectSweep/operations.json`.
-- Folder bookmarks, explicitly disconnected standard tools, keep rules, the Codex path, view, language, and appearance preferences are stored locally. Scan summaries live only in memory. There are no accounts, telemetry, automatic background cleanup, or external services.
+- Saved library locations and their folder bookmarks, explicitly disconnected standard tools, keep rules, the Codex path, view, language, and appearance preferences are stored locally. Scan summaries live only in memory. There are no accounts, telemetry, automatic background cleanup, or external services.
 
 ## Development and validation
 
-The core and UI checks are included in the build commands above. The current 0.4.3 acceptance record reports **112 passing core tests, including the installed Codex protocol check, 55 passing UI state checks, and 597 English localization entries checked for coverage and duplicate keys**. Cleanup tests use isolated generated data. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
+The core and UI checks are included in the build commands above. The current 0.5.0 acceptance record reports **126 passing core tests, including the installed Codex protocol check, 69 passing UI state checks, and 664 English localization entries checked for coverage and duplicate keys**. Cleanup tests use isolated generated data. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
 
 The actual Codex protocol test is optional and skipped unless you provide a local CLI path:
 
@@ -182,7 +194,7 @@ PROJECT_SWEEP_TEST_CODEX=/absolute/path/to/codex swift test
 
 It creates and deletes test sessions only in a temporary, isolated `CODEX_HOME`, without calling a model or touching normal tool directories.
 
-Project Sweep 0.4.3 passed this check with the locally installed **Codex CLI 0.147.0**: the test started the official app-server, created two isolated threads, deleted one through `thread/delete`, verified that the other remained readable, and confirmed that the deleted thread could no longer be read.
+Project Sweep 0.5.0 passed this check with the locally installed **Codex CLI 0.147.0**: the test started the official app-server, created two isolated threads, deleted one through `thread/delete`, verified that the other remained readable, and confirmed that the deleted thread could no longer be read.
 
 An optional performance benchmark requires Python 3:
 

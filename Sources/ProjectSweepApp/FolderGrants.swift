@@ -35,7 +35,7 @@ final class FolderGrants {
     func resolve(_ key: String) throws -> URL? {
         guard let data = defaults.data(forKey: "grant.\(key)") else { return nil }
         var stale = false
-        let url = try URL(resolvingBookmarkData: data, options: [.withSecurityScope, .withoutUI], relativeTo: nil, bookmarkDataIsStale: &stale)
+        let url = try URL(resolvingBookmarkData: data, options: [.withSecurityScope, .withoutUI, .withoutMounting], relativeTo: nil, bookmarkDataIsStale: &stale)
         guard !stale else { throw NSError(domain: "FolderGrant", code: 1, userInfo: [NSLocalizedDescriptionKey: "文件夹授权已失效，请重新选择。"] ) }
         _ = url.startAccessingSecurityScopedResource()
         do {

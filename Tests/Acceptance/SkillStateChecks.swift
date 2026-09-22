@@ -26,18 +26,32 @@ import Foundation
         state.prepareReview()
         guard state.review?.entries.count == 1, state.review?.entries.first?.root.tool == .claude else { fatalError("Confirmation has wrong AI") }
         print("PASS: search, inspection and only-selected preserve skill choices; confirmation keeps AI identity")
+        state.viewMode = .relationships
+        guard state.relationshipInventory?.complete == true, state.visibleRelationships.count == 1,
+              state.selected == [entry.id], state.inspectedID == entry.id else {
+            fatalError("Relationship overview lost the catalog or changed skill choices")
+        }
+        state.search = "no-match"
+        guard state.visibleRelationships.isEmpty, state.selected == [entry.id] else { fatalError("Relationship search changed skill selection") }
+        state.search = ""; state.viewMode = .list
+        guard state.selected == [entry.id], state.visible.count == 1 else { fatalError("Returning from relationships lost skill choice") }
+        print("PASS: read-only relationship view and search preserve the single-AI cleanup selection")
         state.tool = .codex
         guard state.selected.isEmpty, state.inspectedID == nil else { fatalError("AI switch kept stale selection") }
         state.connect(root.appendingPathComponent(".codex/skills"), tool: .codex, location: .personal)
         for _ in 0..<1_000 where state.scanning { try await Task.sleep(for: .milliseconds(10)) }
         state.onlySelected = false
         guard state.visible.count == 1, state.visible.first?.root.tool == .codex, state.entries.count == 2 else { fatalError("AI scope is mixed") }
+        state.viewMode = .relationships
+        guard state.visibleRelationships.count == 2 else { fatalError("Relationship overview must include both observed AI sources") }
+        state.viewMode = .list
         print("PASS: switching AI clears its old selection and presents only the chosen AI")
         let restored = SkillManagementState(preferences: isolated, discovery: nil)
         guard restored.roots.count == 2, restored.entries.isEmpty, restored.selected.isEmpty else { fatalError("Restored grants reused a stale inventory") }
         state.toggle(state.visible[0]); state.scan(); state.cancel()
         try await Task.sleep(for: .milliseconds(80))
-        guard !state.scanning, state.entries.isEmpty, state.selected.isEmpty, state.review == nil, state.status.contains("取消") else { fatalError("Cancelled scan accepted late items") }
+        guard !state.scanning, state.entries.isEmpty, state.selected.isEmpty, state.review == nil,
+              state.relationshipInventory == nil, state.status.contains("取消") else { fatalError("Cancelled scan accepted late items") }
         print("PASS: saved sources restore without stale choices; cancellation rejects late scan results")
         for source in state.roots { state.disconnect(source) }
         guard state.roots.isEmpty, state.entries.isEmpty, state.selected.isEmpty, state.review == nil else { fatalError("Disconnect kept old removal plan") }

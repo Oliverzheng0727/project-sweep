@@ -4,6 +4,8 @@ import SwiftUI
 
 struct SkillDetailView: View {
     let entry: SkillEntry
+    let relationship: SkillRelationship?
+    let relationshipsComplete: Bool
     let close: () -> Void
     var body: some View {
         ScrollView {
@@ -29,6 +31,14 @@ struct SkillDetailView: View {
                 if entry.source == "插件技能" {
                     Text("请使用原 AI 工具的插件管理入口。卸载插件还可能影响其其他技能或连接器。")
                         .font(.caption).foregroundStyle(.secondary)
+                }
+                if let relationship {
+                    Divider()
+                    Text("观察到的关联").font(.headline)
+                    field(relationship.originalObserved ? "原文件目录" : "引用目标（未校验）", relationship.originalPath)
+                    Text(AppText.string(relationshipsComplete ? "仅汇总已连接来源，不代表技能已启用。" : "来源检查未完整完成，以下仅为已发现的关联。"))
+                        .font(.caption).foregroundStyle(.secondary)
+                    ForEach(relationship.entries) { related in SkillRelationshipSourceRow(entry: related) }
                 }
             }.padding(16)
         }

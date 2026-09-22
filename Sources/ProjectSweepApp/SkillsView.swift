@@ -12,23 +12,26 @@ struct SkillsView: View {
             content.frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
         }
         .onAppear { state.activate() }
-        .sheet(item: $state.review) { SkillReviewView(plan: $0, execute: execute) }
+        .sheet(item: $state.review) {
+            SkillReviewView(plan: $0, execute: execute).environment(\.locale, AppText.preference.locale)
+        }
         .alert("无法完成技能操作", isPresented: Binding(get: { state.error != nil }, set: { if !$0 { state.error = nil } })) {
             Button("好") { state.error = nil }
         } message: { Text(AppText.string(state.error ?? "")) }
     }
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                VStack(alignment: .leading, spacing: 7) {
-                    Text("技能管理").font(.largeTitle.weight(.semibold))
-                    Text("自动检索本机技能，按 AI 分开管理。共享原文件保留。").foregroundStyle(.secondary)
-                }
+                Text("自动检索本机技能，按 AI 分开管理。共享原文件保留。").font(.callout).foregroundStyle(.secondary)
                 Spacer()
                 Button("重新扫描", systemImage: "arrow.clockwise", action: state.scan)
                     .disabled(state.scanning)
             }
+            Picker("技能视图", selection: $state.viewMode) {
+                ForEach(SkillViewMode.allCases, id: \.self) { mode in Text(AppText.string(mode.title)).tag(mode) }
+            }.pickerStyle(.segmented).labelsHidden().frame(maxWidth: 300)
+            if state.viewMode == .list {
             HStack(spacing: 12) {
                 ForEach([ToolKind.claude, .codex]) { tool in
                     Button { state.tool = tool } label: {
@@ -36,7 +39,7 @@ struct SkillsView: View {
                             ToolLogo(tool: tool, size: 28)
                             Text(tool.title).font(.headline)
                             Text(AppText.string(state.countLabel(for: tool))).font(.caption).foregroundStyle(.secondary).monospacedDigit()
-                        }.frame(maxWidth: .infinity).padding(.vertical, 10)
+                        }.frame(maxWidth: .infinity).padding(.vertical, 7)
                             .background(state.tool == tool ? SweepPalette.accent.opacity(0.10) : Color.secondary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
                             .overlay(RoundedRectangle(cornerRadius: 10).stroke(state.tool == tool ? SweepPalette.accent : .clear))
                     }.buttonStyle(.plain).accessibilityLabel(AppText.format("%@ 技能", tool.title))
@@ -76,6 +79,7 @@ struct SkillsView: View {
                     }
                 }.padding(.top, 10)
             } label: { Text(AppText.format("技能来源 · %lld 个目录", Int64(state.toolRoots.count))).font(.callout.weight(.medium)) }
+            }
 
             if !state.warnings.isEmpty {
                 Label(state.warnings.prefix(2).map(AppText.string).joined(separator: "\n")
@@ -85,13 +89,17 @@ struct SkillsView: View {
             HStack {
                 TextField("搜索技能、简介或路径", text: $state.search).textFieldStyle(.roundedBorder)
                     .accessibilityLabel("搜索技能")
-                Toggle("仅看已选", isOn: $state.onlySelected).toggleStyle(.checkbox).fixedSize()
-                Button("选择可移除项", action: state.selectVisible).disabled(state.scanning || !state.visible.contains(where: \.selectable))
-                    .help("只选择当前列表中可移除的技能，保留已有选择")
+                if state.viewMode == .list {
+                    Toggle("仅看已选", isOn: $state.onlySelected).toggleStyle(.checkbox).fixedSize()
+                    Button("选择可移除项", action: state.selectVisible).disabled(state.scanning || !state.visible.contains(where: \.selectable))
+                        .help("只选择当前列表中可移除的技能，保留已有选择")
+                }
             }
             if state.scanning {
                 VStack(spacing: 14) { ProgressView(); Text(AppText.string(state.status)).foregroundStyle(.secondary); Button("取消扫描", action: state.cancel) }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if state.viewMode == .relationships {
+                SkillRelationshipsView(relationships: state.visibleRelationships, inventory: state.relationshipInventory)
             } else if state.visible.isEmpty {
                 ContentUnavailableView(AppText.string(state.toolRoots.isEmpty ? "未发现技能目录" : "没有可显示的技能"), systemImage: "puzzlepiece.extension",
                     description: Text(AppText.string(state.toolRoots.isEmpty ? "已检查默认位置。若技能保存在其他地方，可展开“技能来源”添加自定义目录。" : "检查搜索条件，或点击重新扫描。只识别 SKILL.md 技能目录和直接引用。")))
@@ -119,11 +127,21 @@ struct SkillsView: View {
                     }.listStyle(.inset).frame(minHeight: 0, maxHeight: .infinity)
                     if let entry = state.inspected {
                         Divider()
-                        SkillDetailView(entry: entry) { state.inspectedID = nil }.frame(width: 265)
+                        SkillDetailView(entry: entry, relationship: state.relationshipInventory?.relationship(for: entry),
+                                        relationshipsComplete: state.relationshipInventory?.complete == true) { state.inspectedID = nil }.frame(width: 265)
                     }
                 }.frame(minHeight: 0, maxHeight: .infinity).clipped()
             }
             Divider()
+            if state.viewMode == .relationships {
+                HStack {
+                    Label("关联关系仅供查看，移除操作仍按 AI 分开。", systemImage: "eye")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    if !state.selected.isEmpty { Text(AppText.format("列表中保留 %lld 项选择", Int64(state.selected.count))).font(.caption) }
+                    Button("返回技能列表") { state.viewMode = .list }
+                }
+            } else {
             HStack {
                 VStack(alignment: .leading, spacing: 5) {
                     Text(AppText.format("已选 %lld 项", Int64(state.selected.count)) + " · " + SweepState.size(state.selectedBytes)).font(.callout.weight(.medium))
@@ -136,6 +154,7 @@ struct SkillsView: View {
                 Button("查看移除清单", action: state.prepareReview).buttonStyle(.borderedProminent)
                     .disabled(state.selected.isEmpty || state.scanning)
             }
-        }.padding(24)
+            }
+        }.padding(20)
     }
 }

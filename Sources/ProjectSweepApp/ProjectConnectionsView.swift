@@ -20,7 +20,9 @@ struct ProjectConnectionsView: View {
             }
             Text("连接的是工具记录目录（例如 ~/.claude），与存放作品的 Claude 文件夹分开授权。历史不备份，项目记忆保留。")
                 .font(.caption).foregroundStyle(.secondary)
-        }.sheet(isPresented: $showingSetup) { ToolDataSetupView(state: state) }
+        }.sheet(isPresented: $showingSetup) {
+            ToolDataSetupView(state: state).environment(\.locale, AppText.preference.locale)
+        }
     }
 }
 

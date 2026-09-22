@@ -43,4 +43,12 @@ final class AppLocalizationTests: XCTestCase {
         let result = AppText.string("未登记的新错误消息")
         XCTAssertNil(result.range(of: #"\p{Han}"#, options: .regularExpression))
     }
+
+    func testRestoreSummaryKeepsCountsWhenLanguageChanges() {
+        let canonical = "恢复完成：2 项已恢复，1 项未恢复"
+        UserDefaults.standard.set(AppLanguagePreference.english.rawValue, forKey: languageKey)
+        XCTAssertEqual(AppText.string(canonical), "Restore complete: 2 restored, 1 not restored")
+        UserDefaults.standard.set(AppLanguagePreference.simplifiedChinese.rawValue, forKey: languageKey)
+        XCTAssertEqual(AppText.string(canonical), "恢复完成：2 项已恢复，1 项未恢复")
+    }
 }

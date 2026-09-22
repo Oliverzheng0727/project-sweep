@@ -2,6 +2,15 @@
 
 All notable user-visible changes are documented here.
 
+## [0.5.0] - 2026-09-21
+
+- Move navigation, search, refresh, and library view controls into the native macOS sidebar and toolbar; compact project headers and allow resizing the file inspector.
+- Save multiple independently authorized project libraries, migrate the existing library, and retain unavailable locations for retry or reconnection.
+- Add a read-only skill Relationships view showing original paths and references across Claude Code and Codex, with separate AI/source identities and explicit incomplete-evidence states.
+- Group cleanup history by operation and review batch restores, excluding irreversible sessions and unavailable records.
+- Recheck each restore before execution, preserve conflicting destinations, report partial outcomes, and prevent stale or repeated restore plans from moving files again.
+- Extend isolated regression coverage for library migration, view state, skill relationships, and mixed or interrupted restores without changing the cleanup-record format.
+
 ## [0.4.3] - 2026-09-21
 
 - Keep readable Codex sessions visible when individual records lack project paths, files, or supported source metadata; incomplete relationships still disable deletion.
@@ -63,6 +72,7 @@ All notable user-visible changes are documented here.
 - Add adapters for supported Codex and Claude Code local data plus read-only Cursor session handling.
 - Protect Git-tracked content, tool configuration, skills, document packages, symbolic-link boundaries, and user keep rules.
 
+[0.5.0]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.5.0
 [0.4.3]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.4.3
 [0.4.2]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.4.2
 [0.4.1]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.4.1

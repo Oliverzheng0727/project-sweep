@@ -24,7 +24,6 @@ struct ItemBrowser: View {
         GeometryReader { geometry in
         VStack(spacing: 10) {
             HStack(spacing: 8) {
-                TextField("搜索名称或路径", text: binding(\.search)).textFieldStyle(.roundedBorder)
                 Menu {
                     Picker("文件分类", selection: binding(\.category)) {
                         Text("全部分类").tag(Optional<CleanupCategory>.none)
@@ -40,7 +39,7 @@ struct ItemBrowser: View {
                     Picker("文件展示方式", selection: binding(\.tree)) {
                         Text("文件树").tag(true)
                         Text("平铺列表").tag(false)
-                    }.pickerStyle(.segmented).frame(width: 148).help("文件树显示父子层级；平铺列表将整个项目和内部内容分区展示")
+                    }.pickerStyle(.segmented).labelsHidden().fixedSize().help("文件树显示父子层级；平铺列表将整个项目和内部内容分区展示")
                 }
                 Toggle("按大小", isOn: binding(\.largestFirst)).toggleStyle(.button)
                 Toggle("仅看已选", isOn: binding(\.onlySelected)).toggleStyle(.button)
@@ -52,32 +51,29 @@ struct ItemBrowser: View {
                     } }.frame(maxHeight: 90)
                 }.font(.caption).foregroundStyle(.orange)
             }
-            HStack(spacing: 0) {
-                itemList(tree)
+            HSplitView {
+                itemList(tree).frame(minWidth: 260, maxWidth: .infinity, maxHeight: .infinity)
                 if state.inspectorVisible, let item = state.inspectedItem {
-                    Divider().padding(.horizontal, 10)
-                    FileInspectorView(state: state, item: item).frame(width: 290)
+                    FileInspectorView(state: state, item: item).padding(.horizontal, 12)
+                        .frame(minWidth: 250, idealWidth: 290, maxWidth: 470, maxHeight: .infinity)
                 }
             }.frame(minHeight: 0, maxHeight: .infinity, alignment: .top)
-            VStack(spacing: 6) {
-                HStack {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(AppText.format("已选 %lld 项", Int64(state.selected.count))).font(.callout.weight(.medium))
                     if hiddenSelected > 0 { Text(AppText.format("其中 %lld 项在当前列表外", Int64(hiddenSelected))).font(.caption).foregroundStyle(.secondary) }
-                    Spacer()
-                    if scope == .projectFiles {
-                        Text(filters.hasQuery ? AppText.format("匹配 %lld 项 · 所在目录不计入匹配", Int64(matches.count)) : AppText.string("大小含下级内容，不重复累计"))
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
                 }
-                HStack {
+                Spacer(minLength: 0)
                     Button("选择明确缓存") { state.selected.formUnion(filtered.filter { $0.risk == .recommended }.map(\.id)) }
                         .disabled(state.busy || !filtered.contains { $0.risk == .recommended })
                     Button("清空选择") { state.selected = [] }.disabled(state.selected.isEmpty)
-                    Spacer()
                     Button("查看清理清单…", action: state.prepareReview).buttonStyle(.borderedProminent)
                         .disabled(state.selected.isEmpty || state.busy || state.executing)
-                }
-            }.fixedSize(horizontal: false, vertical: true)
+            }.controlSize(.small).fixedSize(horizontal: false, vertical: true)
+            if scope == .projectFiles {
+                Text(filters.hasQuery ? AppText.format("匹配 %lld 项 · 所在目录不计入匹配", Int64(matches.count)) : AppText.string("大小含下级内容，不重复累计"))
+                    .font(.caption2).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
+            }
         }.frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
         }.quickLookPreview($state.previewURL)
     }

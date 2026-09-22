@@ -4,6 +4,7 @@ import SwiftUI
 
 struct ProjectLibraryView: View {
     @ObservedObject var state: SweepState
+    @FocusState private var browserFocused: Bool
 
     private var projects: [ProjectDirectory] {
         ProjectLibraryQuery(search: state.librarySearch, filter: state.libraryFilter,
@@ -14,24 +15,7 @@ struct ProjectLibraryView: View {
     private var selectedProject: ProjectDirectory? { projects.first { $0.path == state.librarySelection } }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("你的项目，一目了然。").font(.largeTitle.weight(.semibold))
-                    Text("双击打开项目，或选中后按回车深入整理。")
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Menu {
-                    Button("选择项目总目录…", action: state.chooseLibrary)
-                    Button("直接打开单个项目…", action: state.chooseProject)
-                    if state.libraryRoot != nil {
-                        Divider()
-                        Button("移除项目库入口（保留文件）", action: state.forgetLibrary)
-                    }
-                } label: { Label(AppText.string(state.libraryRoot == nil ? "添加目录" : "更换目录"), systemImage: "folder.badge.plus") }
-                    .menuStyle(.borderlessButton).fixedSize()
-            }
+        VStack(alignment: .leading, spacing: 14) {
             if let library = state.libraryRoot {
                 HStack(spacing: 14) {
                     ProjectFolderIcon(size: 30)
@@ -44,10 +28,8 @@ struct ProjectLibraryView: View {
                     }
                     Spacer()
                     Text(AppText.format("%lld 个项目", Int64(state.catalog?.projects.count ?? 0))).foregroundStyle(.secondary)
-                    Button("刷新", systemImage: "arrow.clockwise", action: state.loadLibrary).disabled(state.busy)
-                }.padding(16).background(SweepPalette.accent.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+                }.padding(.vertical, 4)
                 HStack {
-                    TextField("搜索项目名称", text: $state.librarySearch).textFieldStyle(.roundedBorder)
                     Menu {
                         Picker("项目筛选", selection: $state.libraryFilter) {
                             ForEach(ProjectLibraryFilter.allCases) { filter in
@@ -59,16 +41,16 @@ struct ProjectLibraryView: View {
                     }.fixedSize()
                     Toggle("按创建时间", isOn: $state.libraryNewestFirst).toggleStyle(.button)
                         .help("按文件夹创建时间从新到旧排列；未知时间放在最后")
-                    Picker("浏览方式", selection: $state.libraryListMode) {
-                        Image(systemName: "square.grid.2x2").accessibilityLabel("网格").tag(false)
-                        Image(systemName: "list.bullet").accessibilityLabel("列表").tag(true)
-                    }.pickerStyle(.segmented).labelsHidden().frame(width: 80)
+                    Spacer()
+                    Text("双击打开项目，或选中后按回车深入整理。")
+                        .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
                 Group {
                     if state.libraryListMode {
                         List(selection: $state.librarySelection) {
                             ForEach(projects) { project in
                                 libraryRow(project).tag(project.path)
+                                    .simultaneousGesture(TapGesture().onEnded { selectProject(project) })
                                     .simultaneousGesture(TapGesture(count: 2).onEnded { state.openProject(project) })
                                     .accessibilityAction(named: "深入整理") { state.openProject(project) }
                                     .contextMenu {
@@ -76,18 +58,22 @@ struct ProjectLibraryView: View {
                                         Button(AppText.string(state.isPinned(project) ? "取消置顶" : "置顶项目")) { state.togglePinned(project) }
                                     }
                             }
-                        }.listStyle(.inset)
+                        }.listStyle(.inset).focused($browserFocused)
                     } else {
                         ScrollView {
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 150, maximum: 210), spacing: 14)], alignment: .leading, spacing: 14) {
                                 ForEach(projects) { project in
                                     ProjectFolderCard(project: project, summary: state.summary(for: project), selected: state.librarySelection == project.path,
-                                        pinned: state.isPinned(project), select: { state.librarySelection = project.path },
+                                        pinned: state.isPinned(project), select: { selectProject(project) },
                                         open: { state.openProject(project) }, togglePin: { state.togglePinned(project) })
                                 }
                             }.padding(2)
-                        }
+                        }.focusable().focused($browserFocused)
                     }
+                }.onKeyPress(.return) {
+                    guard browserFocused, !state.busy, let project = selectedProject, project.isAvailable else { return .ignored }
+                    state.openProject(project)
+                    return .handled
                 }.overlay {
                     if projects.isEmpty, !state.busy {
                         let filtering = !state.librarySearch.isEmpty || state.libraryFilter != .all
@@ -112,8 +98,18 @@ struct ProjectLibraryView: View {
                         if let project = selectedProject { state.openProject(project) }
                     }.buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.return, modifiers: [])
                         .disabled(selectedProject?.isAvailable != true || state.busy)
-                }.padding(18).background(SweepPalette.surface, in: RoundedRectangle(cornerRadius: 14))
-                    .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(SweepPalette.border.opacity(0.4), lineWidth: 0.5))
+                }.padding(12).background(SweepPalette.surface, in: RoundedRectangle(cornerRadius: 10))
+            } else if let library = state.libraryLocations.first(where: { $0.id == state.activeLibraryID }) {
+                ContentUnavailableView {
+                    Label(library.path.isEmpty ? AppText.string("原项目库") : library.title, systemImage: "externaldrive.badge.exclamationmark")
+                } description: {
+                    Text(AppText.string(library.message ?? "项目库暂不可用，请重新连接。"))
+                    Text(library.path).textSelection(.enabled)
+                } actions: {
+                    Button("重试连接") { state.selectLibrary(id: library.id) }
+                    Button("重新连接此项目库…") { state.reconnectLibrary(id: library.id) }
+                    Button("移除项目库入口（保留文件）", action: state.forgetLibrary)
+                }
             } else {
                 VStack(spacing: 20) {
                     HStack(spacing: 18) {
@@ -132,13 +128,18 @@ struct ProjectLibraryView: View {
                     .background(SweepPalette.surface, in: RoundedRectangle(cornerRadius: 20))
                     .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(SweepPalette.border, style: StrokeStyle(lineWidth: 1, dash: [7])))
             }
-        }.padding(28)
+        }.padding(18)
             .onChange(of: state.libraryRoot) { state.librarySelection = nil; state.librarySearch = "" }
             .dropDestination(for: URL.self) { urls, _ in
                 guard urls.count == 1, let url = urls.first, url.isFileURL, !state.executing else { return false }
                 state.acceptLibrary(url); return true
             }
     }
+    private func selectProject(_ project: ProjectDirectory) {
+        state.librarySelection = project.path
+        browserFocused = true
+    }
+
     private func libraryRow(_ project: ProjectDirectory) -> some View {
         HStack(spacing: 12) {
             ProjectFolderIcon(size: 30, available: project.isAvailable)

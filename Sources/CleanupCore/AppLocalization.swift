@@ -111,6 +111,7 @@ public enum AppText {
         if let values = captures(#"^(.+) · 已检查 (\d+) 项 · (.+)$"#, in: source) { return "\(string(values[0])) · \(values[1]) items inspected · \(values[2])" }
         if let values = captures(#"^处理完成：(\d+) 项成功，共 (\d+) 项$"#, in: source) { return "Completed: \(values[0]) of \(values[1]) items succeeded" }
         if let values = captures(#"^技能处理完成：(\d+) 项成功，共 (\d+) 项$"#, in: source) { return "Skills processed: \(values[0]) of \(values[1]) succeeded" }
+        if let values = captures(#"^恢复完成：(\d+) 项已恢复，(\d+) 项未恢复$"#, in: source) { return "Restore complete: \(values[0]) restored, \(values[1]) not restored" }
         if let values = captures(#"^已断开 (.+)，原记录保持不变$"#, in: source) { return "Disconnected \(values[0]). Original records were not changed." }
         if let values = captures(#"^正在查找此项目的 (.+) 关联记录…$"#, in: source) { return "Looking for \(values[0]) records related to this project…" }
         if let values = captures(#"^(.+) 授权不可用，请重新选择文件夹。$"#, in: source) { return "Access to \(values[0]) is unavailable. Choose the folder again." }
