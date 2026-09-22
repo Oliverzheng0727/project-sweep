@@ -174,13 +174,13 @@ struct ItemBrowser: View {
     }
     private func row(_ item: CleanupItem) -> some View {
         HStack(spacing: 9) {
-            Toggle(AppText.format("选择 %@", item.title), isOn: Binding(get: { state.selected.contains(item.id) }, set: { _ in state.toggle(item) }))
+            Toggle(AppText.format("选择 %@", item.displayTitle), isOn: Binding(get: { state.selected.contains(item.id) }, set: { _ in state.toggle(item) }))
                 .labelsHidden().toggleStyle(.checkbox).disabled(!item.isSelectable || state.busy)
-                .accessibilityLabel(AppText.format("清理选择：%@", item.title)).help(item.isSelectable ? AppText.string("勾选加入清理清单") : AppText.string(item.reason))
+                .accessibilityLabel(AppText.format("清理选择：%@", item.displayTitle)).help(item.isSelectable ? AppText.string("勾选加入清理清单") : AppText.string(item.reason))
             Image(systemName: item.action == .deleteSession ? "bubble.left.and.bubble.right" : item.isDirectory ? "folder.fill" : "doc")
                 .foregroundStyle(item.isDirectory ? .blue : SweepPalette.file(item.category)).frame(width: 22).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
-                Text(item.title).font(.body.weight(.medium)).lineLimit(1)
+                Text(item.displayTitle).font(.body.weight(.medium)).lineLimit(1)
                 Text(AppText.string(item.reason)).font(.caption).foregroundStyle(.secondary).lineLimit(state.inspectorVisible ? 1 : 2)
                 if item.category == .session, let modified = item.modifiedAt {
                     Text(AppText.date(modified, dateStyle: .medium, timeStyle: .short)).font(.caption).foregroundStyle(.secondary)
@@ -193,7 +193,7 @@ struct ItemBrowser: View {
                 if !state.inspectorVisible { Text(AppText.string(item.risk.title)).font(.caption).foregroundStyle(.secondary) }
             }
             Button { state.inspect(item) } label: { Image(systemName: "info.circle").frame(width: 24, height: 28) }
-                .buttonStyle(.plain).accessibilityLabel(AppText.format("查看 %@ 的详情", item.title)).disabled(state.busy)
+                .buttonStyle(.plain).accessibilityLabel(AppText.format("查看 %@ 的详情", item.displayTitle)).disabled(state.busy)
         }.padding(.vertical, 5).contentShape(Rectangle())
             .contextMenu {
                 Button("查看详情") { state.inspect(item) }

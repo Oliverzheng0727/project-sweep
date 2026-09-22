@@ -52,14 +52,29 @@ final class SweepState: ObservableObject {
     private var inspectorTask: Task<Void, Never>?
     private var inspectorGeneration = UUID()
     private let preferences: UserDefaults
+    private let defaultToolRoots: [ToolKind: URL]?
+    private var relatedDiscoveryAttempted = false
+    @Published private(set) var toolDiscoveryMessages: [ToolKind: String] = [:]
+    private var invalidToolGrants: Set<ToolKind> = []
     @Published var isProjectOpen = false
-    @Published var projectTab: ProjectTab = .files { didSet { if oldValue != projectTab { closeInspector() } } }
+    @Published var projectTab: ProjectTab = .files {
+        didSet {
+            guard oldValue != projectTab else { return }
+            closeInspector()
+            if projectTab == .related { requestRelatedToolDiscovery() }
+        }
+    }
     @Published var filesScanned = false
     @Published private(set) var projectScanProgress: ScanProgress?
     @Published private(set) var projectScanStartedAt: Date?
     @Published var relatedToolsScanned = 0
     @Published var root: URL? {
-        didSet { if root?.path != oldValue?.path { projectTreeExpansion.reset(rootPath: root?.path) } }
+        didSet {
+            if root?.path != oldValue?.path {
+                projectTreeExpansion.reset(rootPath: root?.path)
+                relatedDiscoveryAttempted = false
+            }
+        }
     }
     @Published var mode: ProjectMode = .organize { didSet { if oldValue != mode, isProjectOpen { scanProject() } } }
     @Published var items: [CleanupItem] = [] {
@@ -68,6 +83,8 @@ final class SweepState: ObservableObject {
     @Published private(set) var projectOverview = ProjectOverview(items: [])
     @Published var selected: Set<String> = []
     @Published var warnings: [String] = []
+    private var projectFileWarnings: [String] = []
+    private var toolScanWarnings: [ToolKind: [String]] = [:]
     @Published var busy = false
     @Published var executing = false
     @Published var status = "所有操作仅在这台 Mac 上进行"
@@ -90,10 +107,12 @@ final class SweepState: ObservableObject {
     private var scanTask: Task<Void, Never>?
     private var generation = UUID()
 
-    init(store: RecordStore = RecordStore(), restorePreferences: Bool = true, preferences: UserDefaults = .standard) {
+    init(store: RecordStore = RecordStore(), restorePreferences: Bool = true, preferences: UserDefaults = .standard,
+         defaultToolRoots: [ToolKind: URL]? = nil) {
         self.store = store
         self.skills = SkillManagementState(preferences: preferences, restorePreferences: restorePreferences)
         self.preferences = preferences
+        self.defaultToolRoots = defaultToolRoots
         self.libraryListMode = preferences.bool(forKey: "libraryListMode")
         self.libraryNewestFirst = preferences.bool(forKey: "libraryNewestFirst")
         self.libraryFilter = ProjectLibraryFilter(rawValue: preferences.string(forKey: "libraryFilter") ?? "") ?? .all
@@ -115,7 +134,11 @@ final class SweepState: ObservableObject {
                 if let root = try grants.resolve(tool.rawValue) {
                     configurations.append(ToolConfiguration(tool: tool, root: root))
                 }
-            } catch { warnings.append("\(tool.title) 授权不可用，请重新选择文件夹。") }
+            } catch {
+                invalidToolGrants.insert(tool)
+                toolDiscoveryMessages[tool] = "\(tool.title) 授权不可用，请重新选择文件夹。"
+                warnings.append("\(tool.title) 授权不可用，请重新选择文件夹。")
+            }
         }
         Task {
             await loadRecords()
@@ -173,6 +196,7 @@ final class SweepState: ObservableObject {
         guard !executing else { return }
         isProjectOpen = false; root = nil; invalidate(); items = []; warnings = []
         filesScanned = false; relatedToolsScanned = 0
+        relatedDiscoveryAttempted = false
         if libraryRoot != nil { loadLibrary() }
     }
     func forgetLibrary() {
@@ -196,50 +220,106 @@ final class SweepState: ObservableObject {
         catch { self.error = "无法授权文件夹：\(error.localizedDescription)" }
     }
     func chooseTool(_ tool: ToolKind) {
+        guard !busy, !executing else { return }
         guard let url = pickFolder(message: "独立授权 \(tool.title) 的本地数据根目录（可选自定义位置）", initial: tool.defaultRoot) else { return }
+        acceptTool(url, for: tool)
+    }
+    func acceptTool(_ url: URL, for tool: ToolKind) {
+        guard !busy, !executing else { return }
         do {
             let root = try grants.grant(url, key: tool.rawValue)
             ignoredDefaultTools.remove(tool.rawValue)
+            invalidToolGrants.remove(tool)
+            toolDiscoveryMessages.removeValue(forKey: tool)
             configurations.removeAll { $0.tool == tool }
             configurations.append(ToolConfiguration(tool: tool, root: root))
             invalidate(); resetToolInspections(); items = []
             if page == .project, isProjectOpen { scanProject() }
+            else if page == .tools { scanTools() }
         } catch { self.error = error.localizedDescription }
     }
     func disconnectTool(_ tool: ToolKind) {
         guard !executing else { return }
         ignoredDefaultTools.insert(tool.rawValue)
+        invalidToolGrants.remove(tool)
+        toolDiscoveryMessages[tool] = "已手动断开，可通过连接目录重新启用。"
         invalidate(); grants.revoke(tool.rawValue)
         configurations.removeAll { $0.tool == tool }; toolInspections.removeValue(forKey: tool); items = []; warnings = []
         if page == .project, isProjectOpen { scanProject() }
         else { resetToolInspections(); status = "已断开 \(tool.title)，原记录保持不变" }
     }
-    @discardableResult
-    func discoverDefaultTools(at roots: [ToolKind: URL]? = nil, scanAfterDiscovery: Bool = true) -> Int {
-        guard !busy, !executing else { return 0 }
-        let candidates = roots ?? Dictionary(uniqueKeysWithValues: ToolKind.allCases.map { ($0, $0.defaultRoot) })
-        var discovered = 0
-        for tool in ToolKind.allCases {
-            guard !configurations.contains(where: { $0.tool == tool }),
-                  !ignoredDefaultTools.contains(tool.rawValue),
-                  let candidate = candidates[tool] else { continue }
+    func discoverDefaultTools(at roots: [ToolKind: URL]? = nil, scanAfterDiscovery: Bool = true,
+                              rescanConnectedTools: Bool = true) {
+        guard !busy, !executing else { return }
+        let candidates = (roots ?? defaultToolRoots ?? Dictionary(uniqueKeysWithValues: ToolKind.allCases.map { ($0, $0.defaultRoot) }))
+            .filter { tool, _ in
+                !configurations.contains(where: { $0.tool == tool })
+                    && !ignoredDefaultTools.contains(tool.rawValue) && !invalidToolGrants.contains(tool)
+            }
+        for tool in ToolKind.allCases where ignoredDefaultTools.contains(tool.rawValue) {
+            toolDiscoveryMessages[tool] = "已手动断开，可通过连接目录重新启用。"
+        }
+        busy = true; status = "正在检索工具数据目录…"
+        let token = generation
+        scanTask = Task {
             do {
-                let values = try candidate.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
-                guard values.isDirectory == true, values.isSymbolicLink != true else { continue }
-                let root = try grants.grant(candidate, key: tool.rawValue)
-                configurations.append(ToolConfiguration(tool: tool, root: root))
-                discovered += 1
+                let result = try await ToolDirectoryDiscovery(roots: candidates).discover()
+                guard !Task.isCancelled, token == generation else { return }
+                for tool in candidates.keys { toolDiscoveryMessages.removeValue(forKey: tool) }
+                for (tool, message) in result.unavailable { toolDiscoveryMessages[tool] = message }
+                for tool in result.missing { toolDiscoveryMessages[tool] = "未发现默认目录，可选择自定义位置。" }
+                for tool in ToolKind.allCases {
+                    guard let candidate = result.roots[tool] else { continue }
+                    do {
+                        // Recheck the discovered path before persisting access; never canonicalize an unexpected link.
+                        try PathSafety.validate(candidate, within: candidate)
+                        let root = try grants.grant(candidate, key: tool.rawValue)
+                        configurations.append(ToolConfiguration(tool: tool, root: root))
+                        toolInspections[tool] = ToolInspection(phase: .pending)
+                    } catch { toolDiscoveryMessages[tool] = error.localizedDescription }
+                }
+                busy = false
+                if scanAfterDiscovery {
+                    if page == .tools, !configurations.isEmpty { scanTools() }
+                    else if page == .project, isProjectOpen { scanRelatedTools(rescanConnected: rescanConnectedTools) }
+                    else if configurations.isEmpty { status = "未在标准位置找到可用的工具数据目录" }
+                }
             } catch {
-                // Missing or inaccessible defaults remain disconnected; users can still choose a custom location.
+                guard !Task.isCancelled, token == generation else { return }
+                busy = false; self.error = error.localizedDescription
             }
         }
-        resetToolInspections()
-        if scanAfterDiscovery {
-            if page == .tools, !configurations.isEmpty { scanTools() }
-            else if page == .project, isProjectOpen, discovered > 0 { scanProject() }
-            else if configurations.isEmpty { status = "未在标准位置找到可用的工具数据目录" }
+    }
+    private func requestRelatedToolDiscovery() {
+        guard page == .project, isProjectOpen, projectTab == .related,
+              filesScanned, !busy, !executing, !relatedDiscoveryAttempted else { return }
+        relatedDiscoveryAttempted = true
+        discoverDefaultTools(rescanConnectedTools: false)
+    }
+    private func scanRelatedTools(rescanConnected: Bool) {
+        guard let root, isProjectOpen, filesScanned, !busy, !executing else { return }
+        let configs = currentConfigurations.filter { rescanConnected || inspection(for: $0.tool).phase == .pending }
+        guard !configs.isEmpty else {
+            status = "已检查当前项目 \(projectOverview.inventoryCount) 项 · \(associationSummary)"
+            return
         }
-        return discovered
+        let tools = Set(configs.map(\.tool))
+        let oldIDs = Set(items.filter { $0.tool.map(tools.contains) == true }.map(\.id))
+        selected.subtract(oldIDs)
+        items.removeAll { oldIDs.contains($0.id) }
+        for tool in tools {
+            toolInspections[tool] = ToolInspection(phase: .pending)
+            toolScanWarnings.removeValue(forKey: tool)
+        }
+        warnings = projectFileWarnings + ToolKind.allCases.flatMap { toolScanWarnings[$0] ?? [] }
+        busy = true; review = nil
+        let token = generation
+        scanTask = Task {
+            await scanToolConfigurations(configs, token: token, project: root)
+            guard !Task.isCancelled, token == generation else { return }
+            busy = false
+            status = "已检查当前项目 \(projectOverview.inventoryCount) 项 · \(associationSummary)"
+        }
     }
     private func pickFolder(message: String, initial: URL? = nil) -> URL? {
         let panel = NSOpenPanel()
@@ -263,7 +343,9 @@ final class SweepState: ObservableObject {
     func scanProject() {
         guard let root, isProjectOpen, !executing else { return }
         invalidate(); items = []; warnings = []; busy = true; status = "正在检查项目…"
+        projectFileWarnings = []; toolScanWarnings = [:]
         filesScanned = false; relatedToolsScanned = 0
+        relatedDiscoveryAttempted = false
         projectScanStartedAt = Date()
         projectScanProgress = ScanProgress(count: 0, path: root.path, phase: .protection)
         let token = generation
@@ -272,7 +354,7 @@ final class SweepState: ObservableObject {
         toolInspections = Dictionary(uniqueKeysWithValues: configs.map { ($0.tool, ToolInspection(phase: .pending)) })
         scanTask = Task {
             do {
-                let result = try await ProjectScanner().scan(request) { [weak self] progress in
+                let result = try await ProjectScanner().scan(request) { [weak self = self] progress in
                     Task { @MainActor in
                         guard let self, self.generation == token, self.projectScanActive else { return }
                         self.projectScanProgress = progress
@@ -284,37 +366,17 @@ final class SweepState: ObservableObject {
                     throw CleanupError.unsafe("扫描结果与当前授权目录不一致，请重新选择项目。")
                 }
                 items = result.items; warnings = result.warnings; filesScanned = true
+                projectFileWarnings = result.warnings
                 let overview = projectOverview
                 if mode == .organize, overview.isComplete, let snapshot = result.items.first(where: { $0.path == root.path })?.snapshot {
                     scanSummaries[root.path] = ProjectScanSummary(bytes: overview.totalBytes,
                         cacheBytes: overview.summary(for: .recommended).bytes, scannedAt: result.scannedAt, snapshot: snapshot)
                 }
-                var inventory: [CleanupItem] = []
-                for config in configs {
-                    guard !Task.isCancelled, token == generation else { return }
-                    toolInspections[config.tool] = ToolInspection(phase: .scanning)
-                    status = "正在查找此项目的 \(config.tool.title) 关联记录…"
-                    do {
-                        let toolResult = try await ToolDataService().scan(config)
-                        guard !Task.isCancelled, token == generation else { return }
-                        guard toolResult.rootPath == config.root.path,
-                              toolResult.items.allSatisfy({ $0.rootPath == config.root.path && $0.tool == config.tool }) else {
-                            throw CleanupError.unsafe("工具扫描结果与授权目录不一致。")
-                        }
-                        toolInspections[config.tool] = .finished(toolResult)
-                        inventory += toolResult.items; warnings += toolResult.warnings
-                        relatedToolsScanned += 1
-                    } catch {
-                        guard !Task.isCancelled, token == generation else { return }
-                        toolInspections[config.tool] = ToolInspection(phase: .failed, message: error.localizedDescription)
-                        warnings.append("\(config.tool.title)：\(error.localizedDescription)")
-                    }
-                }
+                await scanToolConfigurations(configs, token: token, project: root)
                 guard !Task.isCancelled, token == generation else { return }
-                let related = ProjectAssociations.items(for: root, from: inventory)
-                if !related.isEmpty { items += related }
                 busy = false
                 status = "已检查当前项目 \(projectOverview.inventoryCount) 项 · \(associationSummary)"
+                requestRelatedToolDiscovery()
             } catch {
                 guard token == generation else { return }
                 busy = false; if !Task.isCancelled { self.error = error.localizedDescription }
@@ -324,34 +386,44 @@ final class SweepState: ObservableObject {
     func scanTools() {
         guard !executing, !configurations.isEmpty else { return }
         invalidate(); items = []; warnings = []; busy = true; status = "正在检查已授权的工具…"
+        toolScanWarnings = [:]
         let token = generation
         let configs = currentConfigurations
         toolInspections = Dictionary(uniqueKeysWithValues: configs.map { ($0.tool, ToolInspection(phase: .pending)) })
         scanTask = Task {
-            for config in configs {
-                toolInspections[config.tool] = ToolInspection(phase: .scanning)
-                do {
-                    let result = try await ToolDataService().scan(config) { [weak self] progress in
-                        Task { @MainActor in
-                            guard let self, self.generation == token, self.busy else { return }
-                            self.status = "\(config.tool.title) · 已检查 \(progress.count) 项"
-                        }
-                    }
-                    guard !Task.isCancelled, token == generation else { return }
-                    guard result.rootPath == config.root.path,
-                          result.items.allSatisfy({ $0.rootPath == config.root.path && $0.tool == config.tool }) else {
-                        throw CleanupError.unsafe("工具扫描结果与当前授权目录不一致，请重新授权。")
-                    }
-                    toolInspections[config.tool] = .finished(result)
-                    items += result.items; warnings += result.warnings
-                } catch {
-                    guard !Task.isCancelled, token == generation else { return }
-                    toolInspections[config.tool] = ToolInspection(phase: .failed, message: error.localizedDescription)
-                    warnings.append("\(config.tool.title)：\(error.localizedDescription)")
-                }
-            }
-            guard token == generation else { return }
+            await scanToolConfigurations(configs, token: token)
+            guard !Task.isCancelled, token == generation else { return }
             busy = false; status = "已检查 \(items.count) 项 · 请明确选择需要清理的内容"
+        }
+    }
+    private func scanToolConfigurations(_ configs: [ToolConfiguration], token: UUID, project: URL? = nil) async {
+        for config in configs {
+            guard !Task.isCancelled, token == generation else { return }
+            toolInspections[config.tool] = ToolInspection(phase: .scanning)
+            status = project != nil ? "正在查找此项目的 \(config.tool.title) 关联记录…" : "正在检查已授权的工具…"
+            do {
+                let result = try await ToolDataService().scan(config) { [weak self] progress in
+                    Task { @MainActor in
+                        guard let self, self.generation == token, self.busy else { return }
+                        self.status = "\(config.tool.title) · 已检查 \(progress.count) 项"
+                    }
+                }
+                guard !Task.isCancelled, token == generation else { return }
+                guard result.rootPath == config.root.path,
+                      result.items.allSatisfy({ $0.rootPath == config.root.path && $0.tool == config.tool }) else {
+                    throw CleanupError.unsafe("工具扫描结果与当前授权目录不一致，请重新授权。")
+                }
+                toolInspections[config.tool] = .finished(result)
+                items += project.map { ProjectAssociations.items(for: $0, from: result.items) } ?? result.items
+                toolScanWarnings[config.tool] = result.warnings
+                warnings = (project != nil ? projectFileWarnings : []) + ToolKind.allCases.flatMap { toolScanWarnings[$0] ?? [] }
+                if project != nil { relatedToolsScanned += 1 }
+            } catch {
+                guard !Task.isCancelled, token == generation else { return }
+                toolInspections[config.tool] = ToolInspection(phase: .failed, message: error.localizedDescription)
+                toolScanWarnings[config.tool] = ["\(config.tool.title)：\(error.localizedDescription)"]
+                warnings = (project != nil ? projectFileWarnings : []) + ToolKind.allCases.flatMap { toolScanWarnings[$0] ?? [] }
+            }
         }
     }
     var claudeRecoveryAvailable: Bool {
@@ -528,7 +600,8 @@ extension SweepState {
         return filter.apply(to: source, selected: selected)
     }
     func inspection(for tool: ToolKind) -> ToolInspection {
-        toolInspections[tool] ?? ToolInspection(phase: configurations.contains { $0.tool == tool } ? .pending : .disconnected)
+        toolInspections[tool] ?? ToolInspection(phase: configurations.contains { $0.tool == tool } ? .pending : .disconnected,
+                                               message: toolDiscoveryMessages[tool])
     }
     private func resetToolInspections() {
         toolInspections = Dictionary(uniqueKeysWithValues: configurations.map { ($0.tool, ToolInspection(phase: .pending)) })

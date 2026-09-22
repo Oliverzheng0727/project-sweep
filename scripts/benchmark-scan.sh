@@ -2,8 +2,10 @@
 set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_DIR"
-swift build -c release --arch arm64
-BIN_DIR="$(swift build -c release --arch arm64 --show-bin-path)"
+source scripts/build-support.sh
+swift build "${BUILD_ARGS[@]}" -c release --arch arm64
+BIN_DIR="$(swift build "${BUILD_ARGS[@]}" -c release --arch arm64 --show-bin-path)"
+configure_core_link_inputs
 CHECK_DIR="$PROJECT_DIR/.build/performance-benchmark"
 FIXTURE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/ProjectSweep-benchmark.XXXXXX")"
 trap 'rm -rf "$FIXTURE_DIR"' EXIT
@@ -28,7 +30,7 @@ PY
 /usr/bin/git init -q "$FIXTURE_DIR"
 /usr/bin/git -C "$FIXTURE_DIR" add src
 swiftc -O -parse-as-library -swift-version 6 -target arm64-apple-macosx14.0 \
-    -I "$BIN_DIR/Modules" -I Sources/CSQLite -lsqlite3 \
-    Tests/Acceptance/ScanBenchmark.swift "$BIN_DIR"/CleanupCore.build/*.swift.o \
+    -I "$MODULE_DIR" -I Sources/CSQLite -lsqlite3 \
+    Tests/Acceptance/ScanBenchmark.swift "${CORE_OBJECTS[@]}" \
     -o "$CHECK_DIR/scan-benchmark"
 "$CHECK_DIR/scan-benchmark" "$FIXTURE_DIR"

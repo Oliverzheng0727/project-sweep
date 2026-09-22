@@ -25,7 +25,8 @@ struct BrowserFilters: Equatable {
         items.filter { item in
             (category == nil || item.category == category) && (risk == nil || item.risk == risk) &&
             (!onlySelected || selected.contains(item.id)) &&
-            (search.isEmpty || item.path.localizedStandardContains(search) || item.title.localizedStandardContains(search))
+            (search.isEmpty || item.path.localizedStandardContains(search) || item.title.localizedStandardContains(search)
+                || item.displayTitle.localizedStandardContains(search))
         }.sorted(by: sortsBefore)
     }
 }

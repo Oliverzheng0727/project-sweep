@@ -18,7 +18,7 @@ import CleanupCore
         let file = root.appendingPathComponent("must-survive.txt")
         try Data("do not delete".utf8).write(to: file)
         let item = CleanupItem(path: file.path, rootPath: root.path, reason: "fixture", snapshot: try Snapshotter.capture(file))
-        let state = SweepState(store: store, restorePreferences: false)
+        let state = SweepState(store: store, restorePreferences: false, defaultToolRoots: [:])
         state.execute(CleanupPlan(items: [item]))
         for _ in 0..<300 where state.executing { try await Task.sleep(for: .milliseconds(10)) }
         guard !state.executing else { fatalError("operation did not finish") }

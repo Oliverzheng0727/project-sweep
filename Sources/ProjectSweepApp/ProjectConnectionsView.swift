@@ -4,16 +4,11 @@ import SwiftUI
 struct ProjectConnectionsView: View {
     @ObservedObject var state: SweepState
     @State private var showingSetup = false
-    private var detectedCount: Int {
-        ToolKind.allCases.filter { FileManager.default.fileExists(atPath: $0.defaultRoot.path) }.count
-    }
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                if state.configurations.isEmpty {
-                    Label(AppText.format("检测到 %lld 个工具数据目录", Int64(detectedCount)), systemImage: "sparkle.magnifyingglass")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
+                Button("重新检索并扫描", systemImage: "arrow.clockwise") { state.discoverDefaultTools() }
+                    .controlSize(.small).disabled(state.busy || state.executing)
                 Spacer()
                 Button("设置工具数据…", systemImage: "gearshape.2") { showingSetup = true }
                     .controlSize(.small).disabled(state.busy || state.executing)
@@ -26,11 +21,6 @@ struct ProjectConnectionsView: View {
             Text("连接的是工具记录目录（例如 ~/.claude），与存放作品的 Claude 文件夹分开授权。历史不备份，项目记忆保留。")
                 .font(.caption).foregroundStyle(.secondary)
         }.sheet(isPresented: $showingSetup) { ToolDataSetupView(state: state) }
-            .onAppear {
-                if state.configurations.isEmpty {
-                    state.discoverDefaultTools(scanAfterDiscovery: true)
-                }
-            }
     }
 }
 
@@ -57,7 +47,6 @@ private struct ToolDataSetupView: View {
                     .foregroundStyle(.secondary)
             }
             ForEach(ToolKind.allCases) { tool in
-                let detected = FileManager.default.fileExists(atPath: tool.defaultRoot.path)
                 let connected = state.configurations.first { $0.tool == tool }
                 HStack(spacing: 12) {
                     ToolLogo(tool: tool, size: 28)
@@ -65,8 +54,8 @@ private struct ToolDataSetupView: View {
                         Text(tool.title).font(.headline)
                         Text(connected?.root.path ?? tool.defaultRoot.path)
                             .font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
-                        Label(AppText.string(connected != nil ? "已连接" : detected ? "已检测到默认目录" : "未检测到默认目录"),
-                              systemImage: connected != nil ? "checkmark.circle.fill" : detected ? "folder.badge.checkmark" : "questionmark.folder")
+                        Label(AppText.string(connected != nil ? "已连接" : "未连接"),
+                              systemImage: connected != nil ? "checkmark.circle.fill" : "questionmark.folder")
                             .font(.caption).foregroundStyle(connected != nil ? Color.green : Color.secondary)
                     }
                     Spacer()
@@ -98,6 +87,10 @@ struct ToolConnectionStatusView: View {
                 if inspection.phase == .scanning { ProgressView().controlSize(.mini) }
             }
             Text(AppText.string(inspection.title)).font(.caption).foregroundStyle(inspection.checkedAllSessions ? Color.secondary : .orange)
+            if let root = state.configurations.first(where: { $0.tool == tool })?.root {
+                Text(root.path).font(.caption2).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                    .help(root.path).textSelection(.enabled)
+            }
             if let report = inspection.report {
                 Text(AppText.string(report.sessionDeletion == .available ? "支持已验证会话的删除" : "会话删除不可用"))
                     .font(.caption).foregroundStyle(.secondary)

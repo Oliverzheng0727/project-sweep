@@ -600,6 +600,17 @@
 "请为 Codex、Claude Code 或 Cursor 单独选择本地数据目录。" = "Choose a local data folder separately for Codex, Claude Code, or Cursor.";
 "自动检索标准工具目录，也可以为每个工具单独选择自定义位置。会话按工具与项目分组，项目记忆独立保护。" = "Standard tool folders are discovered automatically, and each tool can still use a custom location. Sessions are grouped by tool and project; project memory stays protected.";
 "重新检索并扫描" = "Discover and Scan Again";
+"正在检索工具数据目录…" = "Discovering Tool Data Folders…";
+"已手动断开，可通过连接目录重新启用。" = "Disconnected manually. Choose Connect Folder to reconnect.";
+"未发现默认目录，可选择自定义位置。" = "No standard folder found. You can choose a custom location.";
+"自动检索标准位置；未发现或已断开的工具，也可以单独选择自定义目录。" = "Standard locations are discovered automatically. Choose a custom folder for any missing or disconnected tool.";
+"工具数据位置必须是本地文件夹。" = "The tool data location must be a local folder.";
+"无法读取或进入工具数据目录，请检查访问权限。" = "The tool data folder cannot be opened or read. Check its access permissions.";
+"工具数据目录位于文档或应用包中，未展开读取。" = "The tool data folder is inside a document or app package and was not opened.";
+"会话记录文件缺失或不可访问，保持只读" = "The session file is missing or inaccessible; this session is read-only";
+"会话项目路径缺失或无效，未关联到项目" = "The session has no valid project path and is not linked to a project";
+"部分会话元数据不完整，已保留可读取的记录" = "Some session metadata is incomplete; readable records are still shown";
+"会话 %@" = "Session %@";
 "未在标准位置找到可用的工具数据目录" = "No usable tool data folders were found in the standard locations";
 "标准位置会自动连接；也可以为每个 AI 选择自定义位置。" = "Standard locations connect automatically; you can also choose a custom location for each AI tool.";
 "手动更换或连接自定义目录时，系统会打开文件夹选择器。" = "When you replace a location or connect a custom folder manually, macOS opens the folder picker.";

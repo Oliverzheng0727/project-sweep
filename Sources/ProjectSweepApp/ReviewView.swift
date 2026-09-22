@@ -34,7 +34,7 @@ struct ReviewView: View {
                             ForEach(members) { item in
                                 VStack(alignment: .leading, spacing: 5) {
                                     HStack {
-                                        Text(item.title).font(.headline)
+                                        Text(item.displayTitle).font(.headline)
                                         if !state.selected.contains(item.id) { Text("关联纳入").font(.caption).foregroundStyle(.orange) }
                                     }
                                     Text(item.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)

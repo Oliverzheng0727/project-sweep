@@ -2,6 +2,16 @@
 
 All notable user-visible changes are documented here.
 
+## [0.4.3] - 2026-09-21
+
+- Keep readable Codex sessions visible when individual records lack project paths, files, or supported source metadata; incomplete relationships still disable deletion.
+- Discover tool directories in the background, reject symbolic links in ancestor paths, and distinguish missing folders from inaccessible locations.
+- Preserve selected project files when opening Related Records, defer discovery during project scans, and discover additional tools alongside existing connections.
+- Show each completed tool's results immediately and allow manual retry after incomplete or cancelled scans without rescanning project files.
+- Scan custom tool folders as soon as they are connected, and explain disconnected or unavailable locations on tool cards.
+- Translate app-generated session titles consistently in lists, details, search, and cleanup review while preserving user titles.
+- Support Swift 6.4 build outputs and keep scripted compilation outside sync-managed folders to prevent resource-bundle signing failures.
+
 ## [0.4.2] - 2026-09-12
 
 - Discover and scan existing standard Codex, Claude Code, and Cursor data folders automatically when opening tool data.
@@ -53,6 +63,7 @@ All notable user-visible changes are documented here.
 - Add adapters for supported Codex and Claude Code local data plus read-only Cursor session handling.
 - Protect Git-tracked content, tool configuration, skills, document packages, symbolic-link boundaries, and user keep rules.
 
+[0.4.3]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.4.3
 [0.4.2]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.4.2
 [0.4.1]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.4.1
 [0.4.0]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.4.0

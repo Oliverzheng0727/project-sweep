@@ -43,40 +43,96 @@ struct CodexAdapter {
         let databaseStamp = inventory.databaseStamp
         let walStamp = inventory.walStamp
         var items: [CleanupItem] = []; var incomplete = false
+        var metadataIncomplete = false
+        var seenIDs = Set<UUID>()
+        var rowsWithIssues = Set<String>()
         for row in rows {
-            guard let id = row["id"], UUID(uuidString: id) != nil, let path = row["rollout_path"],
-                  let cwd = row["cwd"], cwd.hasPrefix("/"), let rawSource = row["source"] else { throw CleanupError.unavailable("Codex 会话元数据不完整，禁止删除") }
+            try Task.checkCancellation()
+            // A malformed row must not erase metadata already read from other rows. Only
+            // represent identifiable sessions whose recorded path stays inside this root.
+            guard let id = row["id"], let uuid = UUID(uuidString: id),
+                  let path = row["rollout_path"], path.hasPrefix("/"), !path.contains("\0"),
+                  !path.split(separator: "/").contains(".."),
+                  PathSafety.isWithin(URL(fileURLWithPath: path).standardizedFileURL.path, root: root.path),
+                  URL(fileURLWithPath: path).standardizedFileURL != root,
+                  seenIDs.insert(uuid).inserted else {
+                incomplete = true; metadataIncomplete = true; continue
+            }
             let url = URL(fileURLWithPath: path)
-            guard ToolFiles.exists(url) else { warnings.append("会话 \(id) 的记录文件缺失"); incomplete = true; continue }
-            var item = try ToolFiles.make(url, root: root, tool: .codex, category: .session, risk: supported ? .review : .unavailable, reason: "通过官方 thread/delete 永久删除本地会话")
-            item.id = "codex:session:\(id)"; item.sessionID = id; item.projectPath = URL(fileURLWithPath: cwd).standardizedFileURL.path
-            item.title = row["title"].flatMap { $0.isEmpty ? nil : $0 } ?? "会话 \(id.prefix(8))"; item.action = .deleteSession
+            var issues: [String] = []
+            let snapshot: FileSnapshot?
+            do {
+                // A rollout is a regular file, never a directory to recursively scan.
+                snapshot = try ToolFiles.regularFile(url, root: root)
+            } catch {
+                try Task.checkCancellation()
+                snapshot = nil
+                issues.append("会话记录文件缺失或不可访问，保持只读")
+            }
+            let title = row["title"].flatMap { $0.isEmpty ? nil : $0 }
+            var item = CleanupItem(id: "codex:session:\(id)", path: url.path, rootPath: root.path,
+                title: title ?? "会话 \(id.prefix(8))", category: .session,
+                risk: supported ? .review : .unavailable, reason: "通过官方 thread/delete 永久删除本地会话",
+                bytes: snapshot?.size ?? 0, tool: .codex, sessionID: id, action: .deleteSession, snapshot: snapshot)
+            if title == nil { item.metadata["generatedTitle"] = "session" }
+            if let cwd = row["cwd"], cwd.hasPrefix("/"), !cwd.contains("\0") {
+                item.projectPath = URL(fileURLWithPath: cwd).standardizedFileURL.path
+            } else {
+                issues.append("会话项目路径缺失或无效，未关联到项目")
+                metadataIncomplete = true
+            }
             if let value = row["updated_at"].flatMap(Double.init) { item.modifiedAt = Date(timeIntervalSince1970: value) }
             item.metadata["database"] = database.path; item.metadata["databaseSnapshot"] = databaseStamp
             item.metadata["walSnapshot"] = walStamp
-            let source = (try? JSONSerialization.jsonObject(with: Data(rawSource.utf8), options: [.fragmentsAllowed])) as? String ?? rawSource
-            if source.hasPrefix("{") {
-                guard let object = try JSONSerialization.jsonObject(with: Data(source.utf8)) as? [String: Any] else { throw CleanupError.unavailable("未知 Codex 关联结构") }
-                if let parent = parentID(object) { item.metadata["parentID"] = parent }
-                else { incomplete = true; item.risk = .unavailable; item.reason = "未知会话来源或依赖格式，保持只读" }
-            } else if !["cli", "vscode", "exec", "appServer", "app-server"].contains(source) {
-                incomplete = true; item.risk = .unavailable; item.reason = "未知会话来源，保持只读"
+            if let rawSource = row["source"], !rawSource.isEmpty {
+                let source = (try? JSONSerialization.jsonObject(with: Data(rawSource.utf8), options: [.fragmentsAllowed])) as? String ?? rawSource
+                if source.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("{") {
+                    if let object = (try? JSONSerialization.jsonObject(with: Data(source.utf8))) as? [String: Any],
+                       let parent = parentID(object) { item.metadata["parentID"] = parent }
+                    else { issues.append("未知会话来源或依赖格式，保持只读") }
+                } else if !["cli", "vscode", "exec", "appServer", "app-server"].contains(source) {
+                    issues.append("未知会话来源，保持只读")
+                }
+            } else {
+                issues.append("Codex 会话元数据不完整，禁止删除")
+                metadataIncomplete = true
+            }
+            if let issue = issues.first {
+                incomplete = true; item.risk = .unavailable; item.reason = issue
+                item.details.append(contentsOf: issues.dropFirst())
+                rowsWithIssues.insert(item.id)
             }
             items.append(item)
         }
-        if incomplete {
-            for index in items.indices { items[index].risk = .unavailable; items[index].reason = "会话库存不完整，无法确认全部依赖，保持只读" }
-        }
-        let ids = Set(items.compactMap(\.sessionID))
+        let indices = Dictionary(uniqueKeysWithValues: items.enumerated().compactMap { index, item in
+            item.sessionID.flatMap(UUID.init(uuidString:)).map { ($0, index) }
+        })
         for i in items.indices {
             if let parent = items[i].metadata["parentID"] {
-                guard ids.contains(parent) else { incomplete = true; items[i].risk = .unavailable; items[i].reason = "父会话缺失，无法确认依赖"; continue }
+                guard let parentUUID = UUID(uuidString: parent), let index = indices[parentUUID] else {
+                    incomplete = true; items[i].risk = .unavailable; items[i].reason = "父会话缺失，无法确认依赖"
+                    rowsWithIssues.insert(items[i].id); continue
+                }
                 // Treat a parent and all spawned descendants as an inseparable group.
-                items[i].relatedIDs.append("codex:session:\(parent)")
-                if let index = items.firstIndex(where: { $0.sessionID == parent }) { items[index].relatedIDs.append(items[i].id) }
+                items[i].metadata["parentID"] = items[index].sessionID
+                items[i].relatedIDs.append(items[index].id)
+                items[index].relatedIDs.append(items[i].id)
             }
         }
-        if incomplete { status.sessionRead = .partial; status.message = "部分会话或关联关系无法完整检查" }
+        // Apply the inventory-wide lock after linking as a missing parent also makes
+        // the dependency inventory incomplete. Preserve each row's specific issue.
+        if incomplete {
+            let reason = "会话库存不完整，无法确认全部依赖，保持只读"
+            for index in items.indices {
+                if rowsWithIssues.contains(items[index].id) { items[index].details.append(reason) }
+                else { items[index].reason = reason }
+                items[index].risk = .unavailable
+            }
+            status.sessionRead = .partial; status.sessionDeletion = .unavailable
+            status.message = "部分会话或关联关系无法完整检查"
+            warnings.append(reason)
+        }
+        if metadataIncomplete { warnings.append("部分会话元数据不完整，已保留可读取的记录") }
         return items
     }
     /// Baseline the complete inventory before any query and refuse a mixed-version result.

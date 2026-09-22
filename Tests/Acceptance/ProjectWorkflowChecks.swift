@@ -25,7 +25,7 @@ import Foundation
             try write(tool.appendingPathComponent("projects/\(id)/\(id).jsonl"), String(decoding: data, as: UTF8.self) + "\n")
             try write(tool.appendingPathComponent("projects/\(id)/memory/MEMORY.md"), "保留的记忆")
         }
-        let state = SweepState(store: RecordStore(directory: sandbox.appendingPathComponent("logs")), restorePreferences: false, preferences: preferences)
+        let state = SweepState(store: RecordStore(directory: sandbox.appendingPathComponent("logs")), restorePreferences: false, preferences: preferences, defaultToolRoots: [:])
         state.configurations = [ToolConfiguration(tool: .claude, root: tool)]
         func finish() async throws {
             for _ in 0..<1_000 {
@@ -77,7 +77,7 @@ import Foundation
               preferences.data(forKey: "grant.library") == nil,
               fm.fileExists(atPath: a.path), fm.fileExists(atPath: tool.path) else { fatalError("Disconnect modified project data") }
         let restored = SweepState(store: RecordStore(directory: sandbox.appendingPathComponent("logs-restored")),
-                                  restorePreferences: false, preferences: preferences)
+                                  restorePreferences: false, preferences: preferences, defaultToolRoots: [:])
         guard restored.libraryFilter == .recent, restored.pinnedProjectPaths == Set([a.path]),
               restored.recentProjectPaths.first == b.path else { fatalError("Project library preferences were not restored") }
         print("PASS: disconnecting the library and tool preserves files and removes saved access")

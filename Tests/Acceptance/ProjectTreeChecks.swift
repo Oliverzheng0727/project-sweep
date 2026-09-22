@@ -16,7 +16,7 @@ import Foundation
         }
         let git = Process(); git.executableURL = URL(fileURLWithPath: "/usr/bin/git"); git.arguments = ["init", "-q", root.path]
         try git.run(); git.waitUntilExit(); guard git.terminationStatus == 0 else { fatalError("Fixture Git setup failed") }
-        let state = SweepState(store: RecordStore(directory: sandbox.appendingPathComponent("records")), restorePreferences: false, preferences: preferences)
+        let state = SweepState(store: RecordStore(directory: sandbox.appendingPathComponent("records")), restorePreferences: false, preferences: preferences, defaultToolRoots: [:])
         state.root = root; state.isProjectOpen = true
         state.items = try await ProjectScanner().scan(ScanRequest(root: root)).items
         func presentation() -> ProjectTree {
@@ -70,7 +70,7 @@ import Foundation
         filters.category = nil; filters.tree = false; state.setFilters(filters, for: .projectFiles); tree = presentation()
         guard tree.flatRoot?.isRoot == true, tree.flatContents.allSatisfy({ !$0.isRoot }),
               state.selected == [matchingFile.id], preferences.object(forKey: "projectFileTree") as? Bool == false else { fatalError("Flat view duplicates the root or loses preference/selection") }
-        let relaunched = SweepState(store: RecordStore(directory: sandbox.appendingPathComponent("other-records")), restorePreferences: false, preferences: preferences)
+        let relaunched = SweepState(store: RecordStore(directory: sandbox.appendingPathComponent("other-records")), restorePreferences: false, preferences: preferences, defaultToolRoots: [:])
         guard !relaunched.filters(for: .projectFiles).tree else { fatalError("Saved display preference was not restored") }
         print("PASS: category filtering keeps context; flat sections separate root and contents and persist only the view preference")
 

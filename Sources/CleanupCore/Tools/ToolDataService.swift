@@ -128,12 +128,14 @@ struct CursorAdapter {
                     let id = composer["composerId"] as! String
                     session.id = "cursor:session:\(workspace.lastPathComponent):\(id)"
                     session.sessionID = id; session.title = "会话 \(id.prefix(8))"
+                    session.metadata["generatedTitle"] = "session"
                     session.bytes = 0; session.reason = "读取 Composer 会话标识；未验证实际版本，禁止删除"
                     session.details = ["共享工作区数据库，无法单独计算会话磁盘占用"]
                     return session
                 }
             }
             item.title = "未知格式的工作区会话存储"
+            item.metadata["generatedTitle"] = "cursorWorkspace"
             return [item]
         }
     }

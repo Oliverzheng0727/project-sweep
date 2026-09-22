@@ -11,9 +11,9 @@ A native macOS app for safely cleaning up AI-assisted projects, local tool data,
 
 Project Sweep runs locally. It does not connect to an AI service, require an API key, or download a model. It supports code, documents, presentations, images, video, and mixed projects.
 
-**Version:** 0.4.2 · **Platform:** Apple Silicon, macOS 14+ · **App interface:** English and Simplified Chinese
+**Version:** 0.4.3 · **Platform:** Apple Silicon, macOS 14+ · **App interface:** English and Simplified Chinese
 
-**[Download Project Sweep 0.4.2](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [View the changelog](CHANGELOG.md)
+**[Download Project Sweep 0.4.3](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [View the changelog](CHANGELOG.md)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/project-cleanup-dark.png">
@@ -57,6 +57,8 @@ The build script creates:
 - `dist/ProjectSweep-macOS-arm64.zip` — the packaged app, ready to extract into a local Applications folder.
 
 Builds use a local ad hoc signature. They are not notarized or distributed through the Mac App Store. The script signs and packages the app in a separate temporary directory, avoiding Finder/iCloud attributes that a sync service may add to a workspace copy.
+
+Build, UI-check, and benchmark scripts keep compilation products in `~/Library/Caches/ProjectSweep/Builds`, separately for each checkout. Set `SWEEP_BUILD_PATH` to override this location. Both the Swift 6.4 build engine and older SwiftPM layouts are supported. For a direct `swift test` in a sync-managed checkout, pass `--scratch-path /tmp/project-sweep-tests` to keep test-bundle signing outside the synced folder.
 
 ## Language and appearance
 
@@ -127,6 +129,10 @@ A project library and a tool's history directory are separate locations with sep
 
 Connection status, scan completeness, and deletion capability are reported separately. A no-matching-sessions result requires completed session checks for all connected tools. Partial results, cancellation, failures, and unsupported formats are not reported as empty history.
 
+Directory discovery runs in the background and can be cancelled. Missing installations, disconnected tools, inaccessible locations, and expired folder access have separate explanations. Opening Related Records preserves project files and their cleanup selections, including when discovery was requested during the project scan. Each completed tool's results appear immediately; Discover and Scan Again retries connected tools without rescanning project files. Refreshed session selections are cleared because their records may have changed.
+
+Incomplete Codex rows no longer hide all other sessions. Readable session metadata remains visible, with records lacking a project path grouped separately. Deletion remains disabled when missing files or unresolved relationships prevent a complete dependency check. App-generated session titles follow the interface language; user titles remain unchanged.
+
 Quit the relevant tool, including background processes, before cleaning its data. Project Sweep does not quit other apps for you. The Codex executable's full path can be configured in Settings.
 
 **Session history is not backed up by default.** The review page requires separate acknowledgement that deletion may be irreversible. Claude cleanup uses temporary transaction data only to recover interrupted operations; successful completion removes it. An unfinished transaction blocks further session deletion and exposes a recovery action. Recovery does not overwrite conflicting files, and it is not a backup of successfully deleted sessions.
@@ -166,7 +172,7 @@ This version does not edit Codex configuration to disable shared originals or un
 
 ## Development and validation
 
-The core and UI checks are included in the build commands above. The current 0.4.2 acceptance record reports **95 passing core tests, including the installed Codex protocol check, 48 passing UI state checks, and 586 English localization entries checked for coverage and duplicate keys**. Native interface checks used generated projects. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
+The core and UI checks are included in the build commands above. The current 0.4.3 acceptance record reports **112 passing core tests, including the installed Codex protocol check, 55 passing UI state checks, and 597 English localization entries checked for coverage and duplicate keys**. Cleanup tests use isolated generated data. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
 
 The actual Codex protocol test is optional and skipped unless you provide a local CLI path:
 
@@ -176,7 +182,7 @@ PROJECT_SWEEP_TEST_CODEX=/absolute/path/to/codex swift test
 
 It creates and deletes test sessions only in a temporary, isolated `CODEX_HOME`, without calling a model or touching normal tool directories.
 
-Project Sweep 0.4.2 passed this check with the locally installed **Codex CLI 0.147.0**: the test started the official app-server, created two isolated threads, deleted one through `thread/delete`, verified that the other remained readable, and confirmed that the deleted thread could no longer be read.
+Project Sweep 0.4.3 passed this check with the locally installed **Codex CLI 0.147.0**: the test started the official app-server, created two isolated threads, deleted one through `thread/delete`, verified that the other remained readable, and confirmed that the deleted thread could no longer be read.
 
 An optional performance benchmark requires Python 3:
 

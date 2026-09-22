@@ -340,7 +340,10 @@ final class ToolDataServiceTests: XCTestCase, @unchecked Sendable {
         let sql = "CREATE TABLE threads(id TEXT, rollout_path TEXT, cwd TEXT, source TEXT, updated_at INTEGER); INSERT INTO threads VALUES ('\(parent)','\(transcript.path)','/work',NULL,1);"
         XCTAssertEqual(sqlite3_exec(db, sql, nil, nil, nil), SQLITE_OK); sqlite3_close(db)
         let scan = try await ToolDataService().scan(ToolConfiguration(tool: .codex, root: root, executablePath: "/nonexistent/sweep-codex"))
-        XCTAssertTrue(scan.items.isEmpty)
+        XCTAssertEqual(scan.items.count, 1)
+        XCTAssertEqual(scan.items.first?.sessionID, parent)
+        XCTAssertTrue(scan.items.allSatisfy { !$0.isSelectable })
+        XCTAssertEqual(scan.toolStatus?.sessionRead, .partial)
         XCTAssertTrue(scan.warnings.contains { $0.contains("元数据不完整") })
     }
 

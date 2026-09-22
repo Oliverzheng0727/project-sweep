@@ -35,7 +35,8 @@ struct ToolsView: View {
                 }.padding(12).background(.orange.opacity(0.07), in: RoundedRectangle(cornerRadius: 10))
             }
             if state.configurations.isEmpty {
-                ToolDataEmptyView(title: "尚未连接工具数据", message: "请为 Codex、Claude Code 或 Cursor 单独选择本地数据目录。")
+                ToolDataEmptyView(title: state.busy ? "正在检索工具数据目录…" : "尚未连接工具数据",
+                                  message: "自动检索标准位置；未发现或已断开的工具，也可以单独选择自定义目录。")
             } else {
                 ItemBrowser(state: state, toolMode: true)
             }

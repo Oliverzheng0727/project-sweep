@@ -12,7 +12,7 @@ body:
     id: version
     attributes:
       label: Project Sweep version
-      placeholder: 0.4.2 (12)
+      placeholder: 0.4.3 (13)
     validations:
       required: true
 

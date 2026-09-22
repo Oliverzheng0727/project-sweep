@@ -14,7 +14,7 @@ import Foundation
         let source = root.appendingPathComponent("作品.md")
         try Data("keep".utf8).write(to: source)
         let scan = try await ProjectScanner().scan(ScanRequest(root: root))
-        let state = SweepState(store: RecordStore(directory: root.appendingPathComponent("records")), restorePreferences: false, preferences: preferences)
+        let state = SweepState(store: RecordStore(directory: root.appendingPathComponent("records")), restorePreferences: false, preferences: preferences, defaultToolRoots: [:])
         state.root = root; state.isProjectOpen = true; state.items = scan.items; state.filesScanned = true
         let cacheItem = state.items.first { $0.path == cache.path }!
         var session = CleanupItem(id: "fixture-session", path: "/fixture/session", rootPath: "/fixture", category: .session,
@@ -27,6 +27,7 @@ import Foundation
         guard state.visibleItems(.projectFiles).map(\.path) == [source.path], state.selected == [cacheItem.id, session.id] else { fatalError("Filtering cleared selection") }
         filters.tree = true; filters.largestFirst = false
         state.setFilters(filters, for: .projectFiles); state.projectTab = .related; state.projectTab = .files
+        for _ in 0..<1_000 where state.busy { try await Task.sleep(for: .milliseconds(10)) }
         guard state.filters(for: .projectFiles) == filters, state.selected.count == 2 else { fatalError("View switch lost state") }
         print("PASS: search, category, risk, ordering, tree and project tabs preserve selection")
         filters = BrowserFilters(); filters.onlySelected = true

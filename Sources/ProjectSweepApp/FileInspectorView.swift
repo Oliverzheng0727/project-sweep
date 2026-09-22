@@ -24,14 +24,14 @@ struct FileInspectorView: View {
                         .disabled(state.busy || state.executing)
                 }
                 Button("Finder 定位", systemImage: "folder") { NSWorkspace.shared.activateFileViewerSelecting([item.url]) }
-                    .accessibilityLabel(AppText.format("在 Finder 中显示 %@", item.title))
+                    .accessibilityLabel(AppText.format("在 Finder 中显示 %@", item.displayTitle))
             }.controlSize(.small)
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(item.title).font(.title3.weight(.semibold)).textSelection(.enabled)
+                    Text(item.displayTitle).font(.title3.weight(.semibold)).textSelection(.enabled)
                     if let url = state.inspectorURL {
                         LocalQuickLookView(url: url).frame(height: 140).clipShape(RoundedRectangle(cornerRadius: 8))
-                            .accessibilityLabel(AppText.format("%@ 的本地预览", item.title))
+                            .accessibilityLabel(AppText.format("%@ 的本地预览", item.displayTitle))
                     } else if let message = state.inspectorMessage {
                         Label(AppText.string(message), systemImage: "doc.text.magnifyingglass").font(.callout).foregroundStyle(.secondary)
                     } else { ProgressView("正在校验预览…").controlSize(.small) }

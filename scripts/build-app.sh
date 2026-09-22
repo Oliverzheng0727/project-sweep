@@ -2,8 +2,9 @@
 set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_DIR"
-swift build -c release --arch arm64
-BIN_DIR="$(swift build -c release --arch arm64 --show-bin-path)"
+source scripts/build-support.sh
+swift build "${BUILD_ARGS[@]}" -c release --arch arm64
+BIN_DIR="$(swift build "${BUILD_ARGS[@]}" -c release --arch arm64 --show-bin-path)"
 APP_STAGE="$(mktemp -d "${TMPDIR:-/tmp}/ProjectSweep-build.XXXXXX")"
 trap 'rm -rf "$APP_STAGE"' EXIT
 APP_DIR="$APP_STAGE/Project Sweep.app"
@@ -35,8 +36,8 @@ cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleDevelopmentRegion</key><string>zh-Hans</string>
 <key>CFBundleLocalizations</key><array><string>en</string><string>zh-Hans</string></array>
-<key>CFBundleShortVersionString</key><string>0.4.2</string>
-<key>CFBundleVersion</key><string>12</string>
+<key>CFBundleShortVersionString</key><string>0.4.3</string>
+<key>CFBundleVersion</key><string>13</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
@@ -54,6 +55,11 @@ codesign --verify --strict "$APP_DIR"
 # Sign outside sync-managed folders, which can add FinderInfo between clearing
 # attributes and signing. Package this clean bundle before exposing it to Finder.
 ditto -c -k --norsrc --noextattr --keepParent "$APP_DIR" "$PROJECT_DIR/dist/ProjectSweep-macOS-arm64.zip"
+# Replace the generated bundle instead of merging it: build-engine changes can move
+# resources into Contents/, leaving old files behind and invalidating the signature.
+if [[ -e "$DELIVERY_APP" ]]; then
+    mv "$DELIVERY_APP" "$APP_STAGE/previous-build.app"
+fi
 ditto --norsrc --noextattr "$APP_DIR" "$DELIVERY_APP"
 xattr -cr "$DELIVERY_APP"
 if ! codesign --verify --strict "$DELIVERY_APP"; then

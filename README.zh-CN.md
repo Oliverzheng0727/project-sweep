@@ -9,7 +9,7 @@
 
 原生中英文双语 Mac App，用于整理 AI 开发、文档、PPT、图片、视频项目留下的文件，以及受支持工具的本地数据。应用自身不接入 AI，不需要 API Key，不下载模型。
 
-**[下载 Project Sweep 0.4.2](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [查看更新记录](CHANGELOG.md)
+**[下载 Project Sweep 0.4.3](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [查看更新记录](CHANGELOG.md)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/project-cleanup-dark.png">
@@ -26,7 +26,7 @@ _截图为无损 Retina PNG，使用生成的演示数据和不含个人信息�
 
 ## 运行与使用
 
-当前版本 **0.4.2**，面向 Apple Silicon、macOS 14 及以上，使用本机临时签名；尚未公证或用于商店发布。从源码构建后，可将 `dist/ProjectSweep-macOS-arm64.zip` 解压到本机应用程序目录运行。
+当前版本 **0.4.3**，面向 Apple Silicon、macOS 14 及以上，使用本机临时签名；尚未公证或用于商店发布。从源码构建后，可将 `dist/ProjectSweep-macOS-arm64.zip` 解压到本机应用程序目录运行。
 
 构建同时生成 `dist/Project Sweep.app`。如果工作区在 iCloud 等同步目录中，同步服务可能为应用补写 Finder 属性并干扰签名校验；ZIP 在独立临时目录完成签名与归档，不受这类属性回写影响。
 
@@ -67,11 +67,15 @@ _截图为无损 Retina PNG，使用生成的演示数据和不含个人信息�
 | Claude Code | `~/.claude` | 支持可明确关联的 UUID 会话 JSONL、版本 1 会话索引、历史索引及对应子代理/快照等目录。保留未选会话和项目记忆。旧版无法归属的代理、共享计划或未知格式保持只读。 |
 | Cursor | `~/Library/Application Support/Cursor` | 明确缓存和日志可清理；已知 Composer 元数据可只读列出。**会话删除始终禁用**，须安装实际版本并完成兼容性验收后开发启用。 |
 
-Project Sweep 0.4.2 已使用本机安装的 **Codex CLI 0.147.0** 完成实际协议验收：在独立临时 `CODEX_HOME` 中启动官方 app-server，创建两个测试线程，通过 `thread/delete` 删除其中一个，确认另一个仍可读取且被删线程无法再读取。测试没有调用模型，也没有访问或删除用户正常会话。
+Project Sweep 0.4.3 已使用本机安装的 **Codex CLI 0.147.0** 完成实际协议验收：在独立临时 `CODEX_HOME` 中启动官方 app-server，创建两个测试线程，通过 `thread/delete` 删除其中一个，确认另一个仍可读取且被删线程无法再读取。测试没有调用模型，也没有访问或删除用户正常会话。
 
 项目总目录和工具记录目录是独立的授权入口；例如桌面的 `Claude` 用来放项目，`~/.claude` 用来保存 Claude Code 本地记录。
 
 每个工具分别显示连接和检查状态；会话能否完整读取与能否删除单独表示。只有已连接工具全部完成会话检查时才会显示「未找到关联会话」。部分结果、取消、失败和未支持格式都不会被当成没有历史记录。
+
+目录检索在后台执行，可取消；未安装、手动断开、无法访问及授权失效分别说明。进入「关联记录」保留项目文件及其勾选，扫描过程中切换标签也会在文件扫描完成后继续检索。每个工具完成后立即显示其结果；「重新检索并扫描」会重试已连接工具，保留项目文件与文件选择，只清除需要更新的会话选择。
+
+Codex 中个别不完整记录不会再导致所有会话消失：可读取的元数据继续展示，缺少项目路径的会话单独归组。文件缺失或关联不完整时，删除继续禁用。应用生成的默认会话标题随界面语言切换，用户自定义标题保持原样。
 
 执行工具数据清理前须完全退出对应工具，包括后台进程。清理程序不会替你关闭其他应用。Codex 可在「设置」指定命令行程序的完整路径。
 
@@ -122,6 +126,10 @@ bash scripts/build-app.sh
 ```
 
 `build-app.sh` 生成 arm64 Release 可执行文件、图标、Info.plist，并完成本地签名校验。产物位于 `dist/Project Sweep.app`，同时生成不携带 Finder/iCloud 扩展属性的 `dist/ProjectSweep-macOS-arm64.zip`。
+
+构建、界面检查和性能脚本把编译产物按工作区分别保存到 `~/Library/Caches/ProjectSweep/Builds`，可用 `SWEEP_BUILD_PATH` 覆盖，兼容 Swift 6.4 新构建引擎和旧 SwiftPM 布局。在同步目录直接运行 `swift test` 时，可增加 `--scratch-path /tmp/project-sweep-tests`，避免同步服务为测试包附加属性而导致签名失败。
+
+本版通过 **112 项核心测试（含实际 Codex CLI 协议验收）、55 项界面状态检查和 597 个英文词条检查**。所有删除与恢复测试使用隔离生成数据。
 
 可选性能基准（另需 Python 3）：`bash scripts/benchmark-scan.sh`。脚本只生成并扫描临时项目，包含 2,000 个 Git 已跟踪源码文件及 8,000 个素材文件，结束后删除自己生成的测试目录，输出扫描耗时和清单摘要。可通过 `SWEEP_SCAN_BUDGET_SECONDS=10` 设置本机验收预算；默认不设通用硬件耗时门槛。
 

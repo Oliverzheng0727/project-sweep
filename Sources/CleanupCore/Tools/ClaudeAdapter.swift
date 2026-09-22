@@ -47,6 +47,7 @@ struct ClaudeAdapter {
                     guard UUID(uuidString: sessionID) != nil else { throw CleanupError.unavailable("未知 Claude 会话文件名") }
                     var item = try ToolFiles.make(transcript, root: root, tool: .claude, category: .session, risk: .review, reason: "永久删除会话、关联快照及该会话的历史索引条目")
                     item.id = "claude:session:\(sessionID)"; item.sessionID = sessionID; item.action = .deleteSession; item.title = "会话 \(sessionID.prefix(8))"
+                    item.metadata["generatedTitle"] = "session"
                     let rows = try ToolFiles.jsonLines(transcript, root: root)
                     let identifiers = Set(rows.compactMap { $0.1["sessionId"] as? String })
                     let directories = Set(rows.compactMap { $0.1["cwd"] as? String })
@@ -59,6 +60,7 @@ struct ClaudeAdapter {
                     item.projectPath = URL(fileURLWithPath: cwd).standardizedFileURL.path
                     if let title = rows.reversed().compactMap({ ($0.1["customTitle"] as? String) ?? ($0.1["aiTitle"] as? String) }).first, !title.isEmpty {
                         item.title = title
+                        item.metadata.removeValue(forKey: "generatedTitle")
                     }
                     var associated: [URL] = []
                     for base in [project, root.appendingPathComponent("file-history"), root.appendingPathComponent("session-env"), root.appendingPathComponent("tasks")] {
