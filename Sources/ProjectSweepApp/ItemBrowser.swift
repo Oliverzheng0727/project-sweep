@@ -33,7 +33,30 @@ struct ItemBrowser: View {
                         Text("全部状态").tag(Optional<CleanupRisk>.none)
                         ForEach([CleanupRisk.recommended, .review, .protected, .unavailable], id: \.self) { Text(AppText.string($0.title)).tag(Optional($0)) }
                     }
-                } label: { Label(AppText.string(filters.category?.title ?? filters.risk?.title ?? "筛选"), systemImage: "line.3.horizontal.decrease") }
+                    if scope == .projectFiles {
+                        Divider()
+                        Picker("占用类型", selection: binding(\.storageKind)) {
+                            Text("全部类型").tag(Optional<StorageKind>.none)
+                            ForEach(StorageKind.allCases) { kind in
+                                Text(AppText.string(kind.title)).tag(Optional(kind))
+                            }
+                        }
+                        Picker("最小大小", selection: binding(\.minimumBytes)) {
+                            Text("不限大小").tag(Optional<Int64>.none)
+                            Text("至少 10 MB").tag(Optional<Int64>(10_000_000))
+                            Text("至少 100 MB").tag(Optional<Int64>(100_000_000))
+                            Text("至少 1 GB").tag(Optional<Int64>(1_000_000_000))
+                        }
+                    }
+                    if filters.category != nil || filters.risk != nil || filters.storageKind != nil || filters.minimumBytes != nil {
+                        Divider()
+                        Button("清除分类和大小筛选") {
+                            var copy = filters
+                            copy.category = nil; copy.risk = nil; copy.storageKind = nil; copy.minimumBytes = nil
+                            state.setFilters(copy, for: scope)
+                        }
+                    }
+                } label: { Label(filterTitle, systemImage: "line.3.horizontal.decrease") }
                     .fixedSize()
                 if !toolMode {
                     Picker("文件展示方式", selection: binding(\.tree)) {
@@ -44,6 +67,21 @@ struct ItemBrowser: View {
                 Toggle("按大小", isOn: binding(\.largestFirst)).toggleStyle(.button)
                 Toggle("仅看已选", isOn: binding(\.onlySelected)).toggleStyle(.button)
             }.fixedSize(horizontal: false, vertical: true)
+            if scope == .projectFiles, filters.storageKind != nil || filters.minimumBytes != nil {
+                HStack(spacing: 6) {
+                    if let kind = filters.storageKind {
+                        Label(AppText.string(kind.title), systemImage: kind.systemImage)
+                    }
+                    if let bytes = filters.minimumBytes {
+                        Text(AppText.format("至少 %@", SweepState.size(bytes)))
+                    }
+                    Spacer()
+                    Button("清除类型和大小") {
+                        var copy = filters; copy.storageKind = nil; copy.minimumBytes = nil
+                        state.setFilters(copy, for: scope)
+                    }.buttonStyle(.plain)
+                }.font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
             if !state.warnings.isEmpty {
                 DisclosureGroup(AppText.format("%lld 条扫描提示", Int64(state.warnings.count))) {
                     ScrollView { VStack(alignment: .leading, spacing: 5) {
@@ -76,6 +114,10 @@ struct ItemBrowser: View {
             }
         }.frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
         }.quickLookPreview($state.previewURL)
+    }
+    private var filterTitle: String {
+        let count = [filters.category != nil, filters.risk != nil, filters.storageKind != nil, filters.minimumBytes != nil].filter { $0 }.count
+        return count == 0 ? AppText.string("筛选") : AppText.format("筛选 · %lld", Int64(count))
     }
     private func itemList(_ tree: ProjectTree?) -> some View {
         ScrollViewReader { scroll in

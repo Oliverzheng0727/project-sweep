@@ -44,6 +44,8 @@ final class SweepState: ObservableObject {
         didSet { preferences.set(recentProjectPaths, forKey: "recentProjectPaths") }
     }
     @Published var scanSummaries: [String: ProjectScanSummary] = [:]
+    @Published private(set) var summaryCacheWarning: String?
+    private var currentProjectIdentity: FileSnapshot?
     @Published var browserFilters: [BrowserScope: BrowserFilters] = [:]
     @Published var projectTreeExpansion = ProjectTreeExpansion()
     private var prefersProjectTree = true
@@ -74,6 +76,7 @@ final class SweepState: ObservableObject {
     @Published var root: URL? {
         didSet {
             if root?.path != oldValue?.path {
+                currentProjectIdentity = nil
                 projectTreeExpansion.reset(rootPath: root?.path)
                 relatedDiscoveryAttempted = false
             }
@@ -81,9 +84,14 @@ final class SweepState: ObservableObject {
     }
     @Published var mode: ProjectMode = .organize { didSet { if oldValue != mode, isProjectOpen { scanProject() } } }
     @Published var items: [CleanupItem] = [] {
-        didSet { projectOverview = ProjectOverview(items: items); projectTreeExpansion.reconcile(items: items) }
+        didSet {
+            projectOverview = ProjectOverview(items: items)
+            projectStorage = ProjectStorageBreakdown(items: items)
+            projectTreeExpansion.reconcile(items: items)
+        }
     }
     @Published private(set) var projectOverview = ProjectOverview(items: [])
+    @Published private(set) var projectStorage = ProjectStorageBreakdown(items: [])
     @Published var selected: Set<String> = []
     @Published var warnings: [String] = []
     private var projectFileWarnings: [String] = []
@@ -109,13 +117,15 @@ final class SweepState: ObservableObject {
     @Published var codexExecutable = "" { didSet { preferences.set(codexExecutable, forKey: "codexExecutable") } }
     private let grants: FolderGrants
     private let libraryStore: ProjectLibraryStore
+    private let summaryStore: ProjectScanSummaryStore
     private let store: RecordStore
     let skills: SkillManagementState
     private var scanTask: Task<Void, Never>?
     private var generation = UUID()
 
     init(store: RecordStore = RecordStore(), restorePreferences: Bool = true, preferences: UserDefaults = .standard,
-         defaultToolRoots: [ToolKind: URL]? = nil, skillDiscovery: SkillDiscovery? = SkillDiscovery()) {
+         defaultToolRoots: [ToolKind: URL]? = nil, skillDiscovery: SkillDiscovery? = SkillDiscovery(),
+         summaryStore: ProjectScanSummaryStore? = nil) {
         self.store = store
         self.skills = SkillManagementState(preferences: preferences, restorePreferences: restorePreferences, discovery: skillDiscovery)
         self.preferences = preferences
@@ -129,6 +139,12 @@ final class SweepState: ObservableObject {
         self.prefersProjectTree = preferences.object(forKey: "projectFileTree") as? Bool ?? true
         self.grants = FolderGrants(defaults: preferences)
         self.libraryStore = ProjectLibraryStore(defaults: preferences)
+        self.summaryStore = summaryStore ?? ProjectScanSummaryStore(defaults: preferences)
+        let cachedSummaries = self.summaryStore.load()
+        self.scanSummaries = cachedSummaries.summaries
+        if cachedSummaries.discardedInvalidData {
+            self.summaryCacheWarning = "历史扫描统计无法读取，已忽略。打开项目后将重新扫描。"
+        }
         guard restorePreferences else {
             Task { await loadRecords() }
             return
@@ -170,6 +186,9 @@ final class SweepState: ObservableObject {
             let id = duplicate?.id ?? existingID ?? UUID().uuidString
             let granted = try grants.grant(url, key: "library.\(id)")
             let entry = ProjectLibraryLocation(id: id, path: granted.path, availability: .available)
+            if let previous = libraryLocations.first(where: { $0.id == id }), previous.path != granted.path {
+                forgetSummaries(within: previous.path)
+            }
             if let index = libraryLocations.firstIndex(where: { $0.id == id }) { libraryLocations[index] = entry }
             else { libraryLocations.append(entry) }
             selectLibrary(id: id)
@@ -267,7 +286,7 @@ final class SweepState: ObservableObject {
         grants.revoke(activeLibrary.grantKey)
         libraryLocations.removeAll { $0.id == activeLibrary.id }
         activeLibraryID = libraryLocations.first?.id
-        scanSummaries = scanSummaries.filter { !PathSafety.isWithin($0.key, root: activeLibrary.path) }
+        forgetSummaries(within: activeLibrary.path)
         libraryStore.save(libraryLocations, activeID: activeLibraryID)
         if let activeLibraryID { selectLibrary(id: activeLibraryID) }
         else { status = "已移除项目库入口，原文件保持不变" }
@@ -405,9 +424,26 @@ final class SweepState: ObservableObject {
         }
         previewTask?.cancel(); previewTask = nil; previewURL = nil
     }
-    func cancelScan() { invalidate(); status = "扫描已取消" }
+    func cancelScan() {
+        if let root { markSummariesUnverified(affectedPaths: [root.path]) }
+        invalidate(); status = "扫描已取消"
+    }
+    private func forgetSummaries(within path: String) {
+        guard !path.isEmpty else { return }
+        scanSummaries = scanSummaries.filter { !PathSafety.isWithin($0.key, root: path) }
+        summaryStore.save(scanSummaries)
+    }
+    private func markSummariesUnverified(affectedPaths: [String]) {
+        for path in scanSummaries.keys where affectedPaths.contains(where: {
+            PathSafety.isWithin($0, root: path) || PathSafety.isWithin(path, root: $0)
+        }) {
+            scanSummaries[path]?.isHistorical = true
+        }
+    }
     func scanProject() {
         guard let root, isProjectOpen, !executing else { return }
+        currentProjectIdentity = try? Snapshotter.capture(root)
+        markSummariesUnverified(affectedPaths: [root.path])
         invalidate(); items = []; warnings = []; busy = true; status = "正在检查项目…"
         projectFileWarnings = []; toolScanWarnings = [:]
         filesScanned = false; relatedToolsScanned = 0
@@ -437,6 +473,9 @@ final class SweepState: ObservableObject {
                 if mode == .organize, overview.isComplete, let snapshot = result.items.first(where: { $0.path == root.path })?.snapshot {
                     scanSummaries[root.path] = ProjectScanSummary(bytes: overview.totalBytes,
                         cacheBytes: overview.summary(for: .recommended).bytes, scannedAt: result.scannedAt, snapshot: snapshot)
+                    summaryStore.save(scanSummaries)
+                    summaryCacheWarning = nil
+                    currentProjectIdentity = snapshot
                 }
                 await scanToolConfigurations(configs, token: token, project: root)
                 guard !Task.isCancelled, token == generation else { return }
@@ -558,6 +597,7 @@ final class SweepState: ObservableObject {
         catch { self.error = error.localizedDescription }
     }
     func execute(_ plan: CleanupPlan) {
+        markSummariesUnverified(affectedPaths: plan.items.map(\.path))
         invalidate(); executing = true; status = "正在执行已确认的清理…"
         let configs = currentConfigurations
         Task {
@@ -587,6 +627,7 @@ final class SweepState: ObservableObject {
     }
     func executeSkills(_ plan: SkillRemovalPlan) {
         guard !executing else { return }
+        markSummariesUnverified(affectedPaths: plan.entries.map { $0.url.path })
         invalidate(); executing = true; status = "正在移除已确认的技能…"
         let sources = skills.roots
         skills.cancel()
@@ -613,6 +654,7 @@ final class SweepState: ObservableObject {
     }
     func executeRestore(_ plan: RestorePlan) {
         guard !busy, !executing, restoreReview?.id == plan.id, !plan.records.isEmpty else { return }
+        markSummariesUnverified(affectedPaths: plan.records.map(\.originalPath))
         restoreReview = nil
         executing = true; restoreReport = nil; status = "正在恢复已确认的文件…"
         Task {
@@ -677,9 +719,10 @@ extension SweepState {
     }
     func visibleItems(_ scope: BrowserScope) -> [CleanupItem] {
         let filter = filters(for: scope)
+        let scoped = scopedItems(scope)
         let source = scope == .projectFiles && mode == .organize && !filter.tree && !filter.onlySelected
-            ? projectOverview.units : scopedItems(scope)
-        return filter.apply(to: source, selected: selected)
+            ? projectOverview.units : scoped
+        return filter.apply(to: source, selected: selected, context: scope == .projectFiles ? scoped : nil)
     }
     func inspection(for tool: ToolKind) -> ToolInspection {
         toolInspections[tool] ?? ToolInspection(phase: configurations.contains { $0.tool == tool } ? .pending : .disconnected,
@@ -707,8 +750,14 @@ extension SweepState {
             ? "在已连接工具中，没有找到明确属于这个项目的会话。"
             : "请查看上方各工具状态；未完成检查不代表没有历史记录。"
     }
+    var currentProjectSummary: ProjectScanSummary? {
+        guard let root, let currentProjectIdentity, let summary = scanSummaries[root.path],
+              summary.snapshot.device == currentProjectIdentity.device,
+              summary.snapshot.inode == currentProjectIdentity.inode else { return nil }
+        return summary
+    }
     func summary(for project: ProjectDirectory) -> ProjectScanSummary? {
-        guard let summary = scanSummaries[project.path], summary.snapshot.device == project.snapshot.device,
+        guard project.isAvailable, let summary = scanSummaries[project.path], summary.snapshot.device == project.snapshot.device,
               summary.snapshot.inode == project.snapshot.inode else { return nil }
         return summary
     }

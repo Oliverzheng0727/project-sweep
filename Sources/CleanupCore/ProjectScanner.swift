@@ -99,6 +99,12 @@ private final class ScanWorker {
         guard values.isReadable != false else { return unavailable(url, "没有读取权限。", state: state) }
         let special = [".git", ".svn", ".hg"].contains(url.lastPathComponent)
         if dir, !special, values.isPackage != true {
+            if let evidence = try ProjectCacheRules.evidence(for: url, within: root, device: rootState.device) {
+                item.category = .cache; item.risk = .recommended; item.reason = evidence.reason
+                item.details = evidence.details
+                item.metadata["cacheProducer"] = evidence.producer
+                item.metadata["cacheManifest"] = evidence.manifestPath
+            }
             if url != root, FileManager.default.fileExists(atPath: url.appendingPathComponent(".git").path) {
                 progress?(ScanProgress(count: visited, path: path, phase: .protection))
                 do { try includeTracked(GitInventory.trackedFiles(at: url)) }
@@ -115,10 +121,14 @@ private final class ScanWorker {
                 guard let snapshot = child.snapshot else { return nil }; return (child.title, snapshot)
             }
             item.snapshot?.treeDigest = Snapshotter.digest(snapshots)
+            let containsSourceOrDocument = childItems.contains {
+                $0.category == .source || $0.category == .document || $0.metadata["containsSourceOrDocument"] == "true"
+            }
+            if containsSourceOrDocument { item.metadata["containsSourceOrDocument"] = "true" }
             if childItems.contains(where: { !$0.isSelectable }) {
                 item.risk = .protected
                 item.reason = "包含已保护或无法校验的内容，不能整目录清理。"
-            } else if item.risk == .recommended, childItems.contains(where: { $0.category == .source || $0.category == .document }) {
+            } else if item.risk == .recommended, containsSourceOrDocument {
                 item.risk = .review; item.reason = "缓存目录中包含源码或作品，需要逐项查看。"
             }
             if childItems.contains(where: { $0.metadata["systemProtection"] == "true" }) {
@@ -190,10 +200,10 @@ enum FileRules {
             return (.temporary, .review, "目录名称仅用于分类，不代表文件已经无用。")
         }
         let ext = url.pathExtension.lowercased()
-        if ["ppt", "pptx", "pdf", "doc", "docx", "xls", "xlsx", "key", "pages", "numbers", "png", "jpg", "jpeg", "gif", "svg", "heic", "webp", "mp4", "mov", "mkv", "mp3", "wav", "psd", "ai", "fig", "blend"].contains(ext) {
+        if ProjectFileTypes.creativeExtensions.contains(ext) {
             return (.document, .review, "文档、素材或作品，需要人工确认是否保留。")
         }
-        if ["swift", "py", "js", "ts", "tsx", "jsx", "rs", "c", "cpp", "h", "java", "go", "sh", "ipynb", "r", "tex", "html", "css", "md"].contains(ext) {
+        if ProjectFileTypes.sourceExtensions.contains(ext) {
             return (.source, .review, "源码、脚本或项目说明；不会自动判定为临时文件。")
         }
         return (.other, .review, "尚无明确清理规则，请预览后自行决定。")

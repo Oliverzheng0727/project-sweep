@@ -16,6 +16,9 @@ struct ProjectLibraryView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
+            if let warning = state.summaryCacheWarning {
+                Label(AppText.string(warning), systemImage: "info.circle").font(.caption).foregroundStyle(.secondary)
+            }
             if let library = state.libraryRoot {
                 HStack(spacing: 14) {
                     ProjectFolderIcon(size: 30)
@@ -61,7 +64,7 @@ struct ProjectLibraryView: View {
                         }.listStyle(.inset).focused($browserFocused)
                     } else {
                         ScrollView {
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150, maximum: 210), spacing: 14)], alignment: .leading, spacing: 14) {
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150, maximum: 210), spacing: 14, alignment: .top)], alignment: .leading, spacing: 14) {
                                 ForEach(projects) { project in
                                     ProjectFolderCard(project: project, summary: state.summary(for: project), selected: state.librarySelection == project.path,
                                         pinned: state.isPinned(project), select: { selectProject(project) },
@@ -159,7 +162,10 @@ struct ProjectLibraryView: View {
             if let summary = state.summary(for: project) {
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(AppText.format("%@ · 缓存 %@", SweepState.size(summary.bytes), SweepState.size(summary.cacheBytes))).font(.callout).monospacedDigit()
-                    Text(AppText.format("上次扫描 %@", AppText.date(summary.scannedAt, dateStyle: .none, timeStyle: .short))).font(.caption).foregroundStyle(.secondary)
+                    Text(AppText.format("上次扫描 %@", AppText.date(summary.scannedAt, dateStyle: .short, timeStyle: .short))).font(.caption).foregroundStyle(.secondary)
+                    if summary.isHistorical {
+                        Text("历史统计，待校验").font(.caption2).foregroundStyle(.secondary)
+                    }
                 }
             } else { Text(AppText.string("未扫描")).font(.caption).foregroundStyle(.secondary) }
             Image(systemName: project.isAvailable ? "chevron.right" : "lock.fill").foregroundStyle(.secondary)

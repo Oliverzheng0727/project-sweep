@@ -10,10 +10,13 @@ struct BrowserFilters: Equatable {
     var tree = false
     var largestFirst = true
     var onlySelected = false
-    var hasQuery: Bool { !search.isEmpty || category != nil || risk != nil || onlySelected }
+    var storageKind: StorageKind?
+    var minimumBytes: Int64?
+    var hasQuery: Bool { !search.isEmpty || category != nil || risk != nil || onlySelected || storageKind != nil || minimumBytes != nil }
 
     func sameQuery(as other: Self) -> Bool {
         search == other.search && category == other.category && risk == other.risk && onlySelected == other.onlySelected
+            && storageKind == other.storageKind && minimumBytes == other.minimumBytes
     }
 
     func sortsBefore(_ left: CleanupItem, _ right: CleanupItem) -> Bool {
@@ -21,9 +24,15 @@ struct BrowserFilters: Equatable {
         return left.path.localizedStandardCompare(right.path) == .orderedAscending
     }
 
-    func apply(to items: [CleanupItem], selected: Set<String>) -> [CleanupItem] {
-        items.filter { item in
-            (category == nil || item.category == category) && (risk == nil || item.risk == risk) &&
+    func apply(to items: [CleanupItem], selected: Set<String>, context: [CleanupItem]? = nil) -> [CleanupItem] {
+        // Flat views contain accounting units only; retain omitted parent categories from the complete scan.
+        let storage = storageKind != nil || minimumBytes != nil ? ProjectStorageIndex(items: context ?? items) : nil
+        return items.filter { item in
+            if let storage {
+                guard let kind = storage.filterKind(for: item), storageKind == nil || kind == storageKind else { return false }
+                if let minimumBytes, item.bytes < minimumBytes { return false }
+            }
+            return (category == nil || item.category == category) && (risk == nil || item.risk == risk) &&
             (!onlySelected || selected.contains(item.id)) &&
             (search.isEmpty || item.path.localizedStandardContains(search) || item.title.localizedStandardContains(search)
                 || item.displayTitle.localizedStandardContains(search))
@@ -36,6 +45,7 @@ struct ProjectScanSummary {
     var cacheBytes: Int64
     var scannedAt: Date
     var snapshot: FileSnapshot
+    var isHistorical: Bool = false
 }
 
 enum ProjectLibraryFilter: String, CaseIterable, Identifiable {

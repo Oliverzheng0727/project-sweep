@@ -699,3 +699,35 @@
 "废纸篓中的文件已不存在，可能已被清空或移动。" = "The file is no longer in its recorded Trash location. Trash may have been emptied, or the file may have been moved.";
 "此次操作没有可由应用恢复的文件。历史会话没有备份；已清空或缺少恢复信息的文件请在 Finder 中核实。" = "This operation has no files the app can restore. Session history has no backup. Check files that were emptied from Trash or lack recovery information in Finder.";
 "正在恢复已确认的文件…" = "Restoring the confirmed files…";
+
+// Project inspection and storage summaries
+"缓存" = "Caches";
+"文档" = "Documents";
+"图片" = "Images";
+"视频" = "Video";
+"音频" = "Audio";
+"占用类型" = "Storage Type";
+"全部类型" = "All Types";
+"最小大小" = "Minimum Size";
+"不限大小" = "Any Size";
+"至少 10 MB" = "At Least 10 MB";
+"至少 100 MB" = "At Least 100 MB";
+"至少 1 GB" = "At Least 1 GB";
+"清除分类和大小筛选" = "Clear Category and Size Filters";
+"至少 %@" = "At least %@";
+"清除类型和大小" = "Clear Type and Size";
+"筛选 · %lld" = "Filters · %lld";
+"上次扫描 %@：%@，明确缓存 %@ · 历史统计，待校验" = "Last scan %@: %@, known caches %@ · Historical totals, verification pending";
+"历史统计，待校验" = "Historical Totals · Unverified";
+"不完整" = "Incomplete";
+"筛选%@，%@" = "Filter %@, %@";
+"按本次扫描的文件大小统计，父子目录不重复累计；占用大小不代表可清理空间。" = "File sizes from this scan; parent folders are not counted twice. Occupied space does not indicate how much can be cleaned.";
+"空间分布" = "Storage Breakdown";
+"历史扫描统计无法读取，已忽略。打开项目后将重新扫描。" = "Saved scan totals could not be read and were ignored. Open a project to scan it again.";
+"Next.js 默认缓存目录；项目 package.json 明确声明了 next 依赖。" = "Default Next.js cache folder; the project package.json declares a next dependency.";
+"Parcel 默认构建缓存；项目 package.json 明确声明了 parcel 依赖。" = "Default Parcel build cache; the project package.json declares a parcel dependency.";
+"Vite 默认依赖缓存；项目 package.json 明确声明了 vite 依赖。" = "Default Vite dependency cache; the project package.json declares a vite dependency.";
+"清理后 Next.js 需要重建缓存，首次构建或请求可能变慢，部分数据可能需要重新获取。" = "Next.js must rebuild its cache after cleanup. The first build or request may be slower, and some data may need to be fetched again.";
+"清理后 Parcel 会重新构建缓存，下一次构建可能变慢。" = "Parcel will rebuild its cache after cleanup, so the next build may be slower.";
+"清理后 Vite 会重新预构建依赖，下一次启动可能变慢。" = "Vite will pre-bundle dependencies again after cleanup, so the next startup may be slower.";
+"请先停止正在使用此项目的开发服务器或构建任务，再清理缓存。" = "Stop development servers or build tasks using this project before cleaning its cache.";

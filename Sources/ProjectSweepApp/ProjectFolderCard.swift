@@ -30,7 +30,10 @@ struct ProjectFolderCard: View {
                     .help(project.createdAt.map { AppText.format("文件夹创建时间：%@", AppText.date($0, dateStyle: .full, timeStyle: .medium)) } ?? AppText.string("未能读取文件夹创建时间"))
                 if let summary {
                     Text(AppText.format("%@ · 缓存 %@", SweepState.size(summary.bytes), SweepState.size(summary.cacheBytes))).font(.caption).foregroundStyle(.secondary)
-                    Text(AppText.format("扫描于 %@", AppText.date(summary.scannedAt, dateStyle: .none, timeStyle: .short))).font(.caption).foregroundStyle(.secondary)
+                    Text(AppText.format("扫描于 %@", AppText.date(summary.scannedAt, dateStyle: .short, timeStyle: .short))).font(.caption).foregroundStyle(.secondary)
+                    if summary.isHistorical {
+                        Label("历史统计，待校验", systemImage: "clock.arrow.circlepath").font(.caption2).foregroundStyle(.secondary)
+                    }
                 } else {
                     Text(AppText.string(project.issue == nil ? "未扫描" : "暂不可打开")).font(.caption).foregroundStyle(.secondary)
                 }

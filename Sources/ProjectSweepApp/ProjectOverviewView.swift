@@ -13,6 +13,7 @@ struct ProjectOverviewView: View {
                         var filters = state.filters(for: .projectFiles)
                         filters.risk = selected ? nil : risk
                         filters.category = nil; filters.search = ""; filters.onlySelected = false
+                        filters.storageKind = nil; filters.minimumBytes = nil
                         state.setFilters(filters, for: .projectFiles)
                     } label: {
                         VStack(alignment: .leading, spacing: 5) {
@@ -36,6 +37,7 @@ struct ProjectOverviewView: View {
                 Button {
                     var filters = state.filters(for: .projectFiles); filters.risk = .unavailable
                     filters.search = ""; filters.category = nil; filters.onlySelected = false
+                    filters.storageKind = nil; filters.minimumBytes = nil
                     state.setFilters(filters, for: .projectFiles)
                 } label: {
                     Label(AppText.format("%lld 项无法完整校验，大小统计不完整 · 查看",

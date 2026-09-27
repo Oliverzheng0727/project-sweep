@@ -11,16 +11,16 @@ A native macOS app for safely cleaning up AI-assisted projects, local tool data,
 
 Project Sweep runs locally. It does not connect to an AI service, require an API key, or download a model. It supports code, documents, presentations, images, video, and mixed projects.
 
-**Version:** 0.5.0 · **Platform:** Apple Silicon, macOS 14+ · **App interface:** English and Simplified Chinese
+**Version:** 0.6.0 · **Platform:** Apple Silicon, macOS 14+ · **App interface:** English and Simplified Chinese
 
-**[Download Project Sweep 0.5.0](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [View the changelog](CHANGELOG.md)
+**[Download Project Sweep 0.6.0](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [View the changelog](CHANGELOG.md)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/project-cleanup-dark.png">
   <img src="docs/images/project-cleanup-light.png" alt="Project Sweep inspecting a generated project in its hierarchical cleanup view">
 </picture>
 
-_Lossless Retina screenshot from 0.4.x, using generated demo data and a sanitized shared path. Version 0.5.0 moves search and frequent commands into the native toolbar._
+_Lossless Retina screenshot from 0.4.x, using generated demo data and a sanitized shared path. Since 0.5.0, search and frequent commands live in the native toolbar._
 
 ## What you can do
 
@@ -82,7 +82,7 @@ The previously saved library migrates automatically. Missing or inaccessible lib
 
 Grid and compact list views share search, sorting, filters, pinning, and the current project selection. Filter for recently opened, scanned, cached, or unavailable projects without scanning the whole library. Dates come from each folder's **creation time**. Missing dates remain unknown rather than falling back to modification time or today's date. Double-click a project, or select it and press Return, to scan it in depth.
 
-After a complete scan, its card can show the size, cache total, and scan time from the current app run. These values are separate from the folder's creation date. Projects without a completed scan are marked as unscanned.
+Complete scan totals now survive app restarts. Cards show the original scan time alongside total and known-cache sizes; restored statistics are labeled **Historical Totals · Unverified**. Opening the project immediately shows those prior totals while a new scan runs. Historical metadata never restores file inventories, selections, or executable plans. Folder creation dates remain independent. Projects without a completed scan are marked as unscanned.
 
 ### Choose a cleanup mode
 
@@ -92,6 +92,8 @@ After a complete scan, its card can show the size, cache total, and scan time fr
 | Remove the entire project | Move the selected project folder to Trash, including source files and finished work. Only the root has a cleanup checkbox; child entries are available for inspection and are included in the project removal. Existing scope and keep-rule checks still apply. |
 
 Associated local sessions are selected separately on the project's related-records page, then reviewed alongside project files in a single confirmation list.
+
+Known-cache recognition includes the default Next.js `.next/cache`, Parcel `.parcel-cache`, and Vite `node_modules/.vite` locations when an in-project `package.json` declares the corresponding registry dependency. The inspector explains the producer, evidence, and regeneration cost. Generic rendering, image-processing, `temp`, and `build` names do not prove a folder is disposable. Source files or artwork at any depth keep a cache directory out of quick selection. See [cache rules and official references](docs/cache-rules.md).
 
 ### Inspect the hierarchy
 
@@ -108,6 +110,12 @@ With a row focused, Left and Right collapse, expand, or navigate to a parent or 
 The overview separates clear caches, items requiring manual review, and protected content. Clicking a category filters without selecting anything. A cache directory that can be handled as a unit counts once; ordinary parent folders do not double-count their contents. Document packages count as units, and incomplete statistics are identified explicitly.
 
 Search, sorting, category changes, view changes, and project tab changes preserve cleanup selections. The footer shows selections outside the visible list. Switching projects, rescanning, changing cleanup modes, or revoking access clears outdated selections.
+
+### Understand occupied space
+
+Expand **Storage Breakdown** for cache, dependency, document, image, video, audio, source, build-output, and other totals. It reuses the scanned inventory without reading more files. Parent totals are not added twice; unknown sizes are explicitly incomplete. These are file sizes, not a promise of disk space freed.
+
+Choose a storage type or a minimum size of 10 MB, 100 MB, or 1 GB in **Filter**. Conditions combine with search, risk, and selected-only filters. Tree ancestors stay visible as context, switching views preserves selections, and viewing a category never selects it for cleanup.
 
 ### Preview, protect, and review
 
@@ -180,11 +188,11 @@ Restore rechecks each record and file before moving it. A conflicting destinatio
 - Execution rechecks file identity, scope, modifications, Git tracking, and file use. Changed directory contents require a new scan.
 - Always Keep also protects ancestor folders, preventing removal through a parent-folder selection.
 - Cleanup records store paths, actions, status, size, time, and verification metadata, not conversation text. They are stored at `~/Library/Application Support/ProjectSweep/operations.json`.
-- Saved library locations and their folder bookmarks, explicitly disconnected standard tools, keep rules, the Codex path, view, language, and appearance preferences are stored locally. Scan summaries live only in memory. There are no accounts, telemetry, automatic background cleanup, or external services.
+- Saved library locations and their folder bookmarks, explicitly disconnected standard tools, keep rules, the Codex path, view, language, and appearance preferences are stored locally. Only complete aggregate scan totals, timestamps, root paths, and filesystem identities are cached locally; file inventories and selections are not persisted. The metadata cache is bounded and malformed entries are discarded. There are no accounts, telemetry, automatic background cleanup, or external services.
 
 ## Development and validation
 
-The core and UI checks are included in the build commands above. The current 0.5.0 acceptance record reports **126 passing core tests, including the installed Codex protocol check, 69 passing UI state checks, and 664 English localization entries checked for coverage and duplicate keys**. Cleanup tests use isolated generated data. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
+The core and UI checks are included in the build commands above. The current 0.6.0 acceptance record reports **145 passing core tests, including the installed Codex protocol check, 82 passing UI state checks, and 694 English localization entries checked for coverage and duplicate keys**. Cleanup tests use isolated generated data. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
 
 The actual Codex protocol test is optional and skipped unless you provide a local CLI path:
 
@@ -194,7 +202,7 @@ PROJECT_SWEEP_TEST_CODEX=/absolute/path/to/codex swift test
 
 It creates and deletes test sessions only in a temporary, isolated `CODEX_HOME`, without calling a model or touching normal tool directories.
 
-Project Sweep 0.5.0 passed this check with the locally installed **Codex CLI 0.147.0**: the test started the official app-server, created two isolated threads, deleted one through `thread/delete`, verified that the other remained readable, and confirmed that the deleted thread could no longer be read.
+Project Sweep 0.6.0 passed this check with the locally installed **Codex CLI 0.147.0**: the test started the official app-server, created two isolated threads, deleted one through `thread/delete`, verified that the other remained readable, and confirmed that the deleted thread could no longer be read.
 
 An optional performance benchmark requires Python 3:
 

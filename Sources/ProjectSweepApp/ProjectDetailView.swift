@@ -16,6 +16,12 @@ struct ProjectDetailView: View {
                 Text(state.filesScanned ? (state.projectOverview.isComplete ? SweepState.size(projectBytes) : AppText.string("大小不完整")) : state.projectScanActive ? AppText.string("扫描中") : AppText.string("尚未完成扫描"))
                     .font(.headline.monospacedDigit()).fixedSize()
             }.fixedSize(horizontal: false, vertical: true)
+            if !state.filesScanned, let summary = state.currentProjectSummary {
+                Label(AppText.format("上次扫描 %@：%@，明确缓存 %@ · 历史统计，待校验",
+                    AppText.date(summary.scannedAt, dateStyle: .short, timeStyle: .short),
+                    SweepState.size(summary.bytes), SweepState.size(summary.cacheBytes)), systemImage: "clock.arrow.circlepath")
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
             HStack(spacing: 12) {
                 Picker("清理模式", selection: $state.mode) {
                     Text("整理项目").tag(ProjectMode.organize)
@@ -37,6 +43,7 @@ struct ProjectDetailView: View {
             }.fixedSize(horizontal: false, vertical: true)
             if state.projectTab == .files {
                 if state.mode == .organize { ProjectOverviewView(state: state) }
+                if state.filesScanned { ProjectStorageView(state: state) }
                 ItemBrowser(state: state, toolMode: false, scope: .projectFiles)
             } else {
                 ProjectConnectionsView(state: state)

@@ -2,6 +2,13 @@
 
 All notable user-visible changes are documented here.
 
+## [0.6.0] - 2026-09-27
+
+- Recognize documented Next.js, Parcel, and Vite cache paths with bounded local manifest evidence and regeneration details.
+- Keep cache directories out of quick selection when authored files appear at any depth; share file-type classification with storage statistics.
+- Persist bounded, metadata-only prior-scan summaries, clearly marked historical and never reused as cleanup plans.
+- Add non-overlapping storage composition and combined storage-type/minimum-size filtering while preserving tree context and selections.
+
 ## [0.5.0] - 2026-09-21
 
 - Move navigation, search, refresh, and library view controls into the native macOS sidebar and toolbar; compact project headers and allow resizing the file inspector.
@@ -78,3 +85,5 @@ All notable user-visible changes are documented here.
 [0.4.1]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.4.1
 [0.4.0]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.4.0
 [0.3.3]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.3.3
+
+[0.6.0]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.6.0
