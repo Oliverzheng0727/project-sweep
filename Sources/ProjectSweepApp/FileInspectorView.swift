@@ -40,7 +40,7 @@ struct FileInspectorView: View {
                     if item.metadata["systemProtection"] == "true" {
                         Label("系统保护不会被个人保留标记解除", systemImage: "lock.shield").font(.caption).foregroundStyle(.secondary)
                     }
-                    Text(AppText.format("大小：%@", item.risk == .unavailable ? AppText.string("未完整统计") : SweepState.size(item.bytes))).font(.callout)
+                    Text(AppText.format("大小：%@", item.isSizeComplete ? SweepState.size(item.bytes) : AppText.string("未完整统计"))).font(.callout)
                     Text(item.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                     ForEach(Array(item.details.enumerated()), id: \.offset) { _, detail in Text(AppText.string(detail)).font(.caption).textSelection(.enabled) }
                     if item.action == .deleteSession { Label("历史不备份，删除后不能从本应用恢复", systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange) }

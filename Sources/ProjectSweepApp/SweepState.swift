@@ -722,7 +722,8 @@ extension SweepState {
         let scoped = scopedItems(scope)
         let source = scope == .projectFiles && mode == .organize && !filter.tree && !filter.onlySelected
             ? projectOverview.units : scoped
-        return filter.apply(to: source, selected: selected, context: scope == .projectFiles ? scoped : nil)
+        return filter.apply(to: source, selected: selected, context: scope == .projectFiles ? scoped : nil,
+                            storageIndex: scope == .projectFiles ? projectStorage.index : nil)
     }
     func inspection(for tool: ToolKind) -> ToolInspection {
         toolInspections[tool] ?? ToolInspection(phase: configurations.contains { $0.tool == tool } ? .pending : .disconnected,
@@ -757,8 +758,7 @@ extension SweepState {
         return summary
     }
     func summary(for project: ProjectDirectory) -> ProjectScanSummary? {
-        guard project.isAvailable, let summary = scanSummaries[project.path], summary.snapshot.device == project.snapshot.device,
-              summary.snapshot.inode == project.snapshot.inode else { return nil }
+        guard let summary = scanSummaries[project.path], summary.matchesAvailableProject(project) else { return nil }
         return summary
     }
     var inspectedItem: CleanupItem? { items.first { $0.id == inspectedID } }

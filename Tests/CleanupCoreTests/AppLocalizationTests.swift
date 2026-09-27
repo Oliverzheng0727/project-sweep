@@ -1,26 +1,9 @@
 import XCTest
 @testable import CleanupCore
 
-final class AppLocalizationTests: XCTestCase {
-    private let languageKey = "language"
-    private var previousLanguage: Any?
-
-    override func setUp() {
-        super.setUp()
-        previousLanguage = UserDefaults.standard.object(forKey: languageKey)
-    }
-
-    override func tearDown() {
-        if let previousLanguage {
-            UserDefaults.standard.set(previousLanguage, forKey: languageKey)
-        } else {
-            UserDefaults.standard.removeObject(forKey: languageKey)
-        }
-        super.tearDown()
-    }
-
+final class AppLocalizationTests: LocalizedTestCase {
     func testEnglishPreferenceUsesBundledTranslation() {
-        UserDefaults.standard.set(AppLanguagePreference.english.rawValue, forKey: languageKey)
+        setLanguage(.english)
 
         XCTAssertEqual(AppText.string("项目清理"), "Project Sweep")
         XCTAssertEqual(AppText.string("文件夹授权已失效，请重新选择。"), "Folder access has expired. Choose the folder again.")
@@ -31,14 +14,14 @@ final class AppLocalizationTests: XCTestCase {
     }
 
     func testSimplifiedChinesePreferencePreservesSourceText() {
-        UserDefaults.standard.set(AppLanguagePreference.simplifiedChinese.rawValue, forKey: languageKey)
+        setLanguage(.simplifiedChinese)
 
         XCTAssertEqual(AppText.string("项目清理"), "项目清理")
         XCTAssertEqual(AppText.itemCount(2), "2 项")
     }
 
     func testEnglishFallbackNeverLeaksUnknownChineseMessage() {
-        UserDefaults.standard.set(AppLanguagePreference.english.rawValue, forKey: languageKey)
+        setLanguage(.english)
 
         let result = AppText.string("未登记的新错误消息")
         XCTAssertNil(result.range(of: #"\p{Han}"#, options: .regularExpression))
@@ -46,9 +29,9 @@ final class AppLocalizationTests: XCTestCase {
 
     func testRestoreSummaryKeepsCountsWhenLanguageChanges() {
         let canonical = "恢复完成：2 项已恢复，1 项未恢复"
-        UserDefaults.standard.set(AppLanguagePreference.english.rawValue, forKey: languageKey)
+        setLanguage(.english)
         XCTAssertEqual(AppText.string(canonical), "Restore complete: 2 restored, 1 not restored")
-        UserDefaults.standard.set(AppLanguagePreference.simplifiedChinese.rawValue, forKey: languageKey)
+        setLanguage(.simplifiedChinese)
         XCTAssertEqual(AppText.string(canonical), "恢复完成：2 项已恢复，1 项未恢复")
     }
 }

@@ -42,18 +42,20 @@ public struct StorageSegment: Identifiable, Sendable {
 
 public struct ProjectStorageBreakdown: Sendable {
     public let segments: [StorageSegment]
+    /// Retained with this scan so view-only filters never rebuild the classification index.
+    public let index: ProjectStorageIndex
     public var totalBytes: Int64 { segments.reduce(0) { $0 + $1.bytes } }
     public var isComplete: Bool { !segments.contains(where: \.incomplete) }
     public init(items: [CleanupItem]) {
         let units = ProjectOverview(items: items).units
-        let index = ProjectStorageIndex(items: items, units: units)
+        index = ProjectStorageIndex(items: items, units: units)
         var metrics: [StorageKind: OverviewMetric] = [:]
         for item in units {
             let kind = index.kind(for: item) ?? .other
             var value = metrics[kind] ?? OverviewMetric(count: 0, bytes: 0, incomplete: false)
             value.count += 1
             value.bytes += item.bytes
-            value.incomplete = value.incomplete || item.risk == .unavailable || item.snapshot == nil
+            value.incomplete = value.incomplete || !item.isSizeComplete
             metrics[kind] = value
         }
         segments = StorageKind.allCases.compactMap { kind in

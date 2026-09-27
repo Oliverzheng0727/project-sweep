@@ -47,7 +47,7 @@ struct ProjectFileRow: View {
                 .accessibilityLabel(AppText.format("查看 %@ %@ 的详情",
                     AppText.string(row.isRoot ? "项目根目录" : row.isContext ? "所在目录" : row.item.isDirectory ? "文件夹" : "文件"), row.item.title))
             VStack(alignment: .trailing, spacing: 4) {
-                Text(row.item.risk == .unavailable ? AppText.string("未完整统计") : SweepState.size(row.item.bytes)).font(.callout).monospacedDigit()
+                Text(row.item.isSizeComplete ? SweepState.size(row.item.bytes) : AppText.string("未完整统计")).font(.callout).monospacedDigit()
                 if !state.inspectorVisible { Text(AppText.string(row.status(mode: state.mode))).font(.caption).foregroundStyle(.secondary) }
             }.fixedSize(horizontal: true, vertical: false)
             Button { state.inspect(row.item) } label: { Image(systemName: "info.circle").frame(width: 24, height: 28) }

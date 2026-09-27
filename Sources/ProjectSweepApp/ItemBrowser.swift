@@ -9,15 +9,14 @@ struct ItemBrowser: View {
     var scope: BrowserScope = .all
     @FocusState private var listFocused: Bool
     private var filters: BrowserFilters { state.filters(for: scope) }
-    private var scopedItems: [CleanupItem] { state.scopedItems(scope) }
-    private var filtered: [CleanupItem] { state.visibleItems(scope) }
     private func binding<T>(_ keyPath: WritableKeyPath<BrowserFilters, T>) -> Binding<T> {
         Binding(get: { state.filters(for: scope)[keyPath: keyPath] }, set: { value in
             var copy = state.filters(for: scope); copy[keyPath: keyPath] = value; state.setFilters(copy, for: scope)
         })
     }
     var body: some View {
-        let matches = filtered
+        let scopedItems = state.scopedItems(scope)
+        let matches = state.visibleItems(scope)
         let tree = toolMode ? nil : ProjectTree(items: scopedItems, matching: matches, filters: filters, expansion: state.projectTreeExpansion)
         let displayed = filters.tree && !toolMode ? tree?.displayedIDs ?? [] : Set(matches.map(\.id))
         let hiddenSelected = state.selected.subtracting(displayed).count
@@ -90,7 +89,7 @@ struct ItemBrowser: View {
                 }.font(.caption).foregroundStyle(.orange)
             }
             HSplitView {
-                itemList(tree).frame(minWidth: 260, maxWidth: .infinity, maxHeight: .infinity)
+                itemList(tree, matches: matches, scopedItems: scopedItems).frame(minWidth: 260, maxWidth: .infinity, maxHeight: .infinity)
                 if state.inspectorVisible, let item = state.inspectedItem {
                     FileInspectorView(state: state, item: item).padding(.horizontal, 12)
                         .frame(minWidth: 250, idealWidth: 290, maxWidth: 470, maxHeight: .infinity)
@@ -102,8 +101,8 @@ struct ItemBrowser: View {
                     if hiddenSelected > 0 { Text(AppText.format("其中 %lld 项在当前列表外", Int64(hiddenSelected))).font(.caption).foregroundStyle(.secondary) }
                 }
                 Spacer(minLength: 0)
-                    Button("选择明确缓存") { state.selected.formUnion(filtered.filter { $0.risk == .recommended }.map(\.id)) }
-                        .disabled(state.busy || !filtered.contains { $0.risk == .recommended })
+                    Button("选择明确缓存") { state.selected.formUnion(matches.filter { $0.risk == .recommended }.map(\.id)) }
+                        .disabled(state.busy || !matches.contains { $0.risk == .recommended })
                     Button("清空选择") { state.selected = [] }.disabled(state.selected.isEmpty)
                     Button("查看清理清单…", action: state.prepareReview).buttonStyle(.borderedProminent)
                         .disabled(state.selected.isEmpty || state.busy || state.executing)
@@ -119,13 +118,13 @@ struct ItemBrowser: View {
         let count = [filters.category != nil, filters.risk != nil, filters.storageKind != nil, filters.minimumBytes != nil].filter { $0 }.count
         return count == 0 ? AppText.string("筛选") : AppText.format("筛选 · %lld", Int64(count))
     }
-    private func itemList(_ tree: ProjectTree?) -> some View {
+    private func itemList(_ tree: ProjectTree?, matches: [CleanupItem], scopedItems: [CleanupItem]) -> some View {
         ScrollViewReader { scroll in
         List(selection: Binding<String?>(get: { state.inspectedID }, set: { value in
             if value != state.inspectedID, let item = state.items.first(where: { $0.id == value }) { state.inspect(item) }
         })) {
             if toolMode {
-                let groups = Dictionary(grouping: filtered) { "\($0.tool?.title ?? AppText.string("工具")) · \($0.projectPath ?? AppText.string("未关联项目"))" }
+                let groups = Dictionary(grouping: matches) { "\($0.tool?.title ?? AppText.string("工具")) · \($0.projectPath ?? AppText.string("未关联项目"))" }
                 ForEach(groups.keys.sorted(), id: \.self) { group in
                     Section {
                         ForEach(groups[group] ?? []) { row($0).tag($0.id) }
@@ -187,20 +186,20 @@ struct ItemBrowser: View {
             if scope == .projectFiles && state.projectScanActive {
                 ProjectScanProgressView(progress: state.projectScanProgress, stageTitle: state.projectScanStageTitle,
                     startedAt: state.projectScanStartedAt)
-            } else if filtered.isEmpty && !state.busy {
-                ContentUnavailableView(AppText.string(emptyTitle), systemImage: "tray", description: Text(AppText.string(emptyMessage)))
+            } else if matches.isEmpty && !state.busy {
+                ContentUnavailableView(AppText.string(emptyTitle(scopedItems)), systemImage: "tray", description: Text(AppText.string(emptyMessage(scopedItems))))
             }
         }.background(.background, in: RoundedRectangle(cornerRadius: 10))
         }
     }
-    private var emptyTitle: String {
+    private func emptyTitle(_ scopedItems: [CleanupItem]) -> String {
         if !scopedItems.isEmpty { return "没有符合筛选条件的内容" }
         if toolMode, scope == .all {
             return state.configurations.isEmpty ? "连接工具后检查本地记录" : toolPageComplete ? "未找到可列出的本地记录" : "工具记录尚未完整检查"
         }
         return toolMode ? state.associationEmptyTitle : "暂无文件"
     }
-    private var emptyMessage: String {
+    private func emptyMessage(_ scopedItems: [CleanupItem]) -> String {
         if !scopedItems.isEmpty { return "调整筛选或关闭“仅看已选”；已有勾选仍然保留。" }
         if toolMode, scope == .all {
             return toolPageComplete ? "已连接工具的本地检查已完成。" : "连接目录并点击“扫描已授权目录”，检查范围与结果将显示在这里。"
@@ -227,7 +226,7 @@ struct ItemBrowser: View {
             }
             Spacer(minLength: 4)
             VStack(alignment: .trailing, spacing: 4) {
-                Text(item.risk == .unavailable ? AppText.string("未完整统计") : SweepState.size(item.bytes)).font(.callout).monospacedDigit()
+                Text(item.isSizeComplete ? SweepState.size(item.bytes) : AppText.string("未完整统计")).font(.callout).monospacedDigit()
                 if !state.inspectorVisible { Text(AppText.string(item.risk.title)).font(.caption).foregroundStyle(.secondary) }
             }
             Button { state.inspect(item) } label: { Image(systemName: "info.circle").frame(width: 24, height: 28) }

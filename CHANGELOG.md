@@ -2,6 +2,14 @@
 
 All notable user-visible changes are documented here.
 
+## [0.6.1] - 2026-09-27
+
+- Honor ancestor keep rules when removing a nested project, and retain system protection when organizing a folder inside an AI tool's configuration directory.
+- Reject whole-project removal scans when files change after inventory; verification checks the original inventory instead of accepting a new snapshot.
+- Propagate incomplete size information to parent directories and show it consistently in file rows, details, and storage totals.
+- Reuse storage classifications while browsing large projects and align project-library filters with the availability shown on cards.
+- Include creation dates, scan summaries, historical status, and availability in project-card accessibility descriptions; offer an accessible open action.
+
 ## [0.6.0] - 2026-09-27
 
 - Recognize documented Next.js, Parcel, and Vite cache paths with bounded local manifest evidence and regeneration details.
@@ -87,3 +95,4 @@ All notable user-visible changes are documented here.
 [0.3.3]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.3.3
 
 [0.6.0]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.6.0
+[0.6.1]: https://github.com/Oliverzheng0727/project-sweep/releases/tag/v0.6.1

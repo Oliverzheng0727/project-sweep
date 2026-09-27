@@ -2,35 +2,22 @@ import XCTest
 import CSQLite
 @testable import CleanupCore
 
-final class CleanupItemTitleTests: XCTestCase {
-    private var previousLanguage: Any?
-
-    override func setUp() {
-        super.setUp()
-        previousLanguage = UserDefaults.standard.object(forKey: "language")
-    }
-
-    override func tearDown() {
-        if let previousLanguage { UserDefaults.standard.set(previousLanguage, forKey: "language") }
-        else { UserDefaults.standard.removeObject(forKey: "language") }
-        super.tearDown()
-    }
-
+final class CleanupItemTitleTests: LocalizedTestCase {
     func testGeneratedTitlesFollowLanguageWithoutChangingStoredTitle() throws {
         let item = CleanupItem(path: "/fixture/session", rootPath: "/fixture", title: "会话 12345678",
             category: .session, reason: "fixture", sessionID: "12345678-1234-1234-1234-123456789abc",
             action: .deleteSession, metadata: ["generatedTitle": "session"])
-        UserDefaults.standard.set("english", forKey: "language")
+        setLanguage(.english)
         XCTAssertEqual(item.displayTitle, "Session 12345678")
         XCTAssertEqual(item.title, "会话 12345678")
         let decoded = try JSONDecoder().decode(CleanupItem.self, from: JSONEncoder().encode(item))
         XCTAssertEqual(decoded.displayTitle, "Session 12345678")
-        UserDefaults.standard.set("simplifiedChinese", forKey: "language")
+        setLanguage(.simplifiedChinese)
         XCTAssertEqual(decoded.displayTitle, "会话 12345678")
     }
 
     func testUnmarkedUserTitlesAndLegacyItemsRemainVerbatim() throws {
-        UserDefaults.standard.set("english", forKey: "language")
+        setLanguage(.english)
         for title in ["论文讨论", "会话 12345678", "未知格式的工作区会话存储", "English session"] {
             let item = CleanupItem(path: "/fixture/session", rootPath: "/fixture", title: title,
                 category: .session, reason: "fixture", action: .deleteSession)
@@ -55,7 +42,7 @@ final class CleanupItemTitleTests: XCTestCase {
         var warnings: [String] = []
         var status = ToolScanStatus()
         let items = try ClaudeAdapter.scan(ToolConfiguration(tool: .claude, root: root), warnings: &warnings, status: &status)
-        UserDefaults.standard.set("english", forKey: "language")
+        setLanguage(.english)
         XCTAssertEqual(items.first { $0.sessionID == untitled }?.displayTitle, "Session \(untitled.prefix(8))")
         XCTAssertEqual(items.first { $0.sessionID == custom }?.displayTitle, "会话 我的论文")
         XCTAssertEqual(items.first { $0.sessionID == generated }?.displayTitle, "中文自动标题")
@@ -74,7 +61,7 @@ final class CleanupItemTitleTests: XCTestCase {
         var warnings: [String] = []
         var status = ToolScanStatus()
         let items = try CursorAdapter.scan(ToolConfiguration(tool: .cursor, root: root), warnings: &warnings, status: &status)
-        UserDefaults.standard.set("english", forKey: "language")
+        setLanguage(.english)
         XCTAssertEqual(items.first { $0.sessionID == "abcd1234xyz" }?.displayTitle, "Session abcd1234")
         XCTAssertEqual(items.first { $0.sessionID == nil }?.displayTitle, "Workspace session storage has an unknown format")
         XCTAssertTrue(items.allSatisfy { !$0.isSelectable })

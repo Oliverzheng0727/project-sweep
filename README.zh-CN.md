@@ -9,7 +9,7 @@
 
 原生中英文双语 Mac App，用于整理 AI 开发、文档、PPT、图片、视频项目留下的文件，以及受支持工具的本地数据。应用自身不接入 AI，不需要 API Key，不下载模型。
 
-**[下载 Project Sweep 0.6.0](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [查看更新记录](CHANGELOG.md)
+**[下载 Project Sweep 0.6.1](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [查看更新记录](CHANGELOG.md)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/project-cleanup-dark.png">
@@ -26,7 +26,7 @@ _截图来自 0.4.x，为无损 Retina PNG，使用生成的演示数据和不�
 
 ## 运行与使用
 
-当前版本 **0.6.0**，面向 Apple Silicon、macOS 14 及以上，使用本机临时签名；尚未公证或用于商店发布。从源码构建后，可将 `dist/ProjectSweep-macOS-arm64.zip` 解压到本机应用程序目录运行。
+当前版本 **0.6.1**，面向 Apple Silicon、macOS 14 及以上，使用本机临时签名；尚未公证或用于商店发布。从源码构建后，可将 `dist/ProjectSweep-macOS-arm64.zip` 解压到本机应用程序目录运行。
 
 构建同时生成 `dist/Project Sweep.app`。如果工作区在 iCloud 等同步目录中，同步服务可能为应用补写 Finder 属性并干扰签名校验；ZIP 在独立临时目录完成签名与归档，不受这类属性回写影响。
 
@@ -69,7 +69,7 @@ _截图来自 0.4.x，为无损 Retina PNG，使用生成的演示数据和不�
 | Claude Code | `~/.claude` | 支持可明确关联的 UUID 会话 JSONL、版本 1 会话索引、历史索引及对应子代理/快照等目录。保留未选会话和项目记忆。旧版无法归属的代理、共享计划或未知格式保持只读。 |
 | Cursor | `~/Library/Application Support/Cursor` | 明确缓存和日志可清理；已知 Composer 元数据可只读列出。**会话删除始终禁用**，须安装实际版本并完成兼容性验收后开发启用。 |
 
-Project Sweep 0.6.0 已使用本机安装的 **Codex CLI 0.147.0** 完成实际协议验收：在独立临时 `CODEX_HOME` 中启动官方 app-server，创建两个测试线程，通过 `thread/delete` 删除其中一个，确认另一个仍可读取且被删线程无法再读取。测试没有调用模型，也没有访问或删除用户正常会话。
+Project Sweep 0.6.1 已使用本机安装的 **Codex CLI 0.147.0** 完成实际协议验收：在独立临时 `CODEX_HOME` 中启动官方 app-server，创建两个测试线程，通过 `thread/delete` 删除其中一个，确认另一个仍可读取且被删线程无法再读取。测试没有调用模型，也没有访问或删除用户正常会话。
 
 项目总目录和工具记录目录是独立的授权入口；例如桌面的 `Claude` 用来放项目，`~/.claude` 用来保存 Claude Code 本地记录。
 
@@ -139,7 +139,7 @@ bash scripts/build-app.sh
 
 构建、界面检查和性能脚本把编译产物按工作区分别保存到 `~/Library/Caches/ProjectSweep/Builds`，可用 `SWEEP_BUILD_PATH` 覆盖，兼容 Swift 6.4 新构建引擎和旧 SwiftPM 布局。在同步目录直接运行 `swift test` 时，可增加 `--scratch-path /tmp/project-sweep-tests`，避免同步服务为测试包附加属性而导致签名失败。
 
-本版通过 **145 项核心测试（含实际 Codex CLI 协议验收）、82 项界面状态检查和 694 个英文词条检查**。所有删除与恢复测试使用隔离生成数据。
+本版通过 **154 项核心测试（含实际 Codex CLI 协议验收）、89 项界面状态检查和 694 个英文词条检查**。所有删除与恢复测试使用隔离生成数据。
 
 可选性能基准（另需 Python 3）：`bash scripts/benchmark-scan.sh`。脚本只生成并扫描临时项目，包含 2,000 个 Git 已跟踪源码文件及 8,000 个素材文件，结束后删除自己生成的测试目录，输出扫描耗时和清单摘要。可通过 `SWEEP_SCAN_BUDGET_SECONDS=10` 设置本机验收预算；默认不设通用硬件耗时门槛。
 
@@ -166,3 +166,10 @@ PROJECT_SWEEP_TEST_CODEX=/absolute/path/to/codex swift test
 - **空间分布与大文件筛选**：展开空间分布，查看缓存、依赖、文档、图片、视频、音频、源码、构建产物和其他内容；类型、最小大小与已有筛选组合使用，父子目录不重复累计。大小不完整会明确提示，占用大小不等于可清理或已释放空间。
 
 本轮没有增加成果归档、自动清理或新的工具历史删除兼容性。
+
+## 0.6.1 自检修复
+
+- 父目录的“始终保留”同样保护其中的子项目；直接整理 `.agents`、`.claude`、`.codex` 或 `.cursor` 内部目录时，工具配置仍受保护。
+- 整项目移除扫描使用原清单校验最终状态，包含版本历史目录；发现新增或修改后要求重新扫描。
+- 子项无法完整统计时，父目录、文件行和详情统一显示大小不完整。大项目筛选复用占用分类，不可用项目不会进入“已扫描”或“包含缓存”结果。
+- 项目卡片的辅助功能说明包含创建日期、扫描大小、历史状态和打开操作。

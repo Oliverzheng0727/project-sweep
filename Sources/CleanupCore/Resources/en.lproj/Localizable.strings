@@ -306,7 +306,7 @@
 "%lld 个项目" = "%lld projects";
 "已选 %lld 项" = "%lld selected";
 "其中 %lld 项在当前列表外" = "%lld selected items are outside the current list";
-"%lld 条扫描提示" = "%lld scan notices";
+"%lld 条扫描提示" = "Scan notices: %lld";
 "匹配 %lld 项 · 所在目录不计入匹配" = "%lld matches · containing folders are not counted";
 "已检查 %lld 项" = "%lld items inspected";
 "%lld 个文件与目录" = "%lld files and folders";
@@ -356,7 +356,7 @@
 "已纳入 %lld 个关联项；共享数据与子会话必须一起处理。请核对下方“关联纳入”标记。" = "%lld related items were included. Shared data and child sessions must be processed together. Review the Included Dependency labels below.";
 "累计处理 %@" = "Total Processed %@";
 "累计移入废纸篓 %@" = "Total Moved to Trash %@";
-"%lld 项无法完整校验，大小统计不完整 · 查看" = "%lld items could not be fully verified; size totals are incomplete · View";
+"%lld 项无法完整校验，大小统计不完整 · 查看" = "Not fully verified: %lld · Size totals are incomplete · View";
 "选择存放多个项目的总目录，例如 Claude 文件夹" = "Choose a folder that contains multiple projects, such as a Claude folder";
 "选择你要整理的项目文件夹" = "Choose the project folder you want to inspect";
 "独立授权 %@ 的本地数据根目录（可选自定义位置）" = "Authorize %@'s local data root separately (custom locations are supported)";

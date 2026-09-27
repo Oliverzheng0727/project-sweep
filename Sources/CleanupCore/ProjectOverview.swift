@@ -12,7 +12,7 @@ public struct ProjectOverview: Sendable {
     /// Every scanned project entry except the synthetic root row.
     public let inventoryCount: Int
     public var totalBytes: Int64 { units.reduce(0) { $0 + $1.bytes } }
-    public var isComplete: Bool { !units.contains { $0.risk == .unavailable || $0.snapshot == nil } }
+    public var isComplete: Bool { units.allSatisfy(\.isSizeComplete) }
 
     public init(items: [CleanupItem]) {
         let project = items.filter { $0.tool == nil }
@@ -44,6 +44,6 @@ public struct ProjectOverview: Sendable {
     public func summary(for risk: CleanupRisk) -> OverviewMetric {
         let members = units.filter { $0.risk == risk }
         return OverviewMetric(count: members.count, bytes: members.reduce(0) { $0 + $1.bytes },
-                              incomplete: members.contains { $0.risk == .unavailable || $0.snapshot == nil })
+                              incomplete: members.contains { !$0.isSizeComplete })
     }
 }

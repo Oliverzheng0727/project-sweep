@@ -9,6 +9,7 @@ SDK_DIR="$(xcrun --sdk macosx --show-sdk-path)"
 CHECK_DIR="$PROJECT_DIR/.build/ui-boundary-checks"
 mkdir -p "$CHECK_DIR"
 configure_core_link_inputs
+export PACKAGE_RESOURCE_BUNDLE_PATH="$BIN_DIR"
 COMMON=(-parse-as-library -swift-version 6 -sdk "$SDK_DIR" -target arm64-apple-macosx14.0 -I "$MODULE_DIR" -I Sources/CSQLite -lsqlite3)
 swiftc "${COMMON[@]}" Sources/ProjectSweepApp/PreviewSafety.swift Tests/Acceptance/PreviewChecks.swift "${CORE_OBJECTS[@]}" -o "$CHECK_DIR/preview-checks"
 "$CHECK_DIR/preview-checks"
@@ -42,3 +43,9 @@ swiftc "${COMMON[@]}" Sources/ProjectSweepApp/PreviewSafety.swift Sources/Projec
 
 swiftc "${COMMON[@]}" Sources/ProjectSweepApp/PreviewSafety.swift Sources/ProjectSweepApp/FolderGrants.swift Sources/ProjectSweepApp/ProjectLibraryStore.swift Sources/ProjectSweepApp/ProjectScanSummaryStore.swift Sources/ProjectSweepApp/BrowserState.swift Sources/ProjectSweepApp/ProjectTree.swift Sources/ProjectSweepApp/ToolInspection.swift Sources/ProjectSweepApp/SkillManagementState.swift Sources/ProjectSweepApp/SweepState.swift Tests/Acceptance/StorageFilterChecks.swift "${CORE_OBJECTS[@]}" -o "$CHECK_DIR/storage-filter-checks"
 "$CHECK_DIR/storage-filter-checks"
+
+swiftc "${COMMON[@]}" Sources/ProjectSweepApp/PreviewSafety.swift Sources/ProjectSweepApp/FolderGrants.swift Sources/ProjectSweepApp/ProjectLibraryStore.swift Sources/ProjectSweepApp/ProjectScanSummaryStore.swift Sources/ProjectSweepApp/BrowserState.swift Sources/ProjectSweepApp/ProjectTree.swift Sources/ProjectSweepApp/ToolInspection.swift Sources/ProjectSweepApp/SkillManagementState.swift Sources/ProjectSweepApp/SweepState.swift Tests/Acceptance/WorkflowConsistencyChecks.swift "${CORE_OBJECTS[@]}" -o "$CHECK_DIR/workflow-consistency-checks"
+"$CHECK_DIR/workflow-consistency-checks"
+
+swiftc "${COMMON[@]}" Sources/ProjectSweepApp/PreviewSafety.swift Sources/ProjectSweepApp/FolderGrants.swift Sources/ProjectSweepApp/ProjectLibraryStore.swift Sources/ProjectSweepApp/ProjectScanSummaryStore.swift Sources/ProjectSweepApp/BrowserState.swift Sources/ProjectSweepApp/ProjectTree.swift Sources/ProjectSweepApp/ToolInspection.swift Sources/ProjectSweepApp/SkillManagementState.swift Sources/ProjectSweepApp/SweepState.swift Sources/ProjectSweepApp/ProjectCardAccessibility.swift Tests/Acceptance/ProjectCardAccessibilityChecks.swift "${CORE_OBJECTS[@]}" -o "$CHECK_DIR/project-card-accessibility-checks"
+"$CHECK_DIR/project-card-accessibility-checks"

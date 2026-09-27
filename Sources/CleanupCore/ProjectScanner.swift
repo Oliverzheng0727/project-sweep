@@ -36,7 +36,9 @@ private final class ScanWorker {
         _ = try visit(root, depth: 0)
         if request.mode == .remove {
             let unsafe = items.contains { $0.risk == .unavailable }
-            let kept = request.protectedPaths.contains { PathSafety.isWithin($0, root: root.path) }
+            let kept = request.protectedPaths.contains {
+                PathSafety.isWithin($0, root: root.path) || PathSafety.isWithin(root.path, root: $0)
+            }
             for index in items.indices {
                 if items[index].path == root.path {
                     items[index].category = .project
@@ -44,7 +46,12 @@ private final class ScanWorker {
                     items[index].reason = kept ? "包含“始终保留”项，请先取消保留标记。" : unsafe ? "包含无法校验的内容，不能整体移除。" : "整个项目文件夹将移入废纸篓，包括源码和作品。"
                     if items[index].isSelectable {
                         progress?(ScanProgress(count: visited, path: root.path, phase: .verification))
-                        items[index].snapshot = try Snapshotter.capture(root, recursive: true)
+                        guard let snapshot = items[index].snapshot else {
+                            throw CleanupError.unsafe("缺少文件校验信息，请重新扫描。")
+                        }
+                        // Keep the inventory baseline: recapturing it here could silently
+                        // accept new or changed files that were never shown in the scan.
+                        try Snapshotter.verify(root, matches: snapshot)
                     }
                 } else {
                     if items[index].risk != .unavailable { items[index].risk = .protected }
@@ -117,6 +124,9 @@ private final class ScanWorker {
             var childItems: [CleanupItem] = []
             for child in children { childItems.append(try visit(child, depth: depth + 1)) }
             item.bytes = childItems.reduce(0) { $0 + $1.bytes }
+            if childItems.contains(where: { !$0.isSizeComplete }) {
+                item.metadata["sizeIncomplete"] = "true"
+            }
             let snapshots = childItems.compactMap { child -> (String, FileSnapshot)? in
                 guard let snapshot = child.snapshot else { return nil }; return (child.title, snapshot)
             }
@@ -151,14 +161,20 @@ private final class ScanWorker {
             progress?(ScanProgress(count: visited, path: path))
         } else if dir, special {
             progress?(ScanProgress(count: visited, path: path, phase: .verification))
-            do { item.bytes = try Snapshotter.logicalBytes(url) }
+            do {
+                // Whole-project removal must verify opaque history against the same
+                // baseline as ordinary descendants, without exposing its children.
+                if request.mode == .remove { item.snapshot = try Snapshotter.capture(url, recursive: true) }
+                item.bytes = try Snapshotter.logicalBytes(url)
+            }
             catch { return unavailable(url, "版本历史内部元数据无法完整校验，不能整体清理。", state: state) }
             progress?(ScanProgress(count: visited, path: path))
         }
         let kept = request.protectedPaths.contains { PathSafety.isWithin(path, root: $0) || (dir && PathSafety.isWithin($0, root: path)) }
         let configDirectories = [".agents", ".claude", ".codex", ".cursor"]
-        let withinConfig = configDirectories.contains(root.lastPathComponent)
-            || url.pathComponents.dropFirst(root.pathComponents.count).contains(where: configDirectories.contains)
+        // Selecting a nested folder must not bypass protection inherited from a
+        // tool configuration directory above the selected project root.
+        let withinConfig = url.pathComponents.contains(where: configDirectories.contains)
         let protectedConfig = withinConfig || [".env", ".git", ".svn", ".hg", ".mcp.json"].contains(url.lastPathComponent) || url.lastPathComponent.hasPrefix(".env.")
         let gitProtected = trackedAncestors.contains(path)
         if request.mode == .organize, protectedConfig || gitFailed || gitProtected || url == root {

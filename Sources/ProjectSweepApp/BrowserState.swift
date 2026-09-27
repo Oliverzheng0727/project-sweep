@@ -24,9 +24,11 @@ struct BrowserFilters: Equatable {
         return left.path.localizedStandardCompare(right.path) == .orderedAscending
     }
 
-    func apply(to items: [CleanupItem], selected: Set<String>, context: [CleanupItem]? = nil) -> [CleanupItem] {
+    func apply(to items: [CleanupItem], selected: Set<String>, context: [CleanupItem]? = nil,
+               storageIndex: ProjectStorageIndex? = nil) -> [CleanupItem] {
         // Flat views contain accounting units only; retain omitted parent categories from the complete scan.
-        let storage = storageKind != nil || minimumBytes != nil ? ProjectStorageIndex(items: context ?? items) : nil
+        let storage = storageKind != nil || minimumBytes != nil
+            ? storageIndex ?? ProjectStorageIndex(items: context ?? items) : nil
         return items.filter { item in
             if let storage {
                 guard let kind = storage.filterKind(for: item), storageKind == nil || kind == storageKind else { return false }
@@ -46,6 +48,10 @@ struct ProjectScanSummary {
     var scannedAt: Date
     var snapshot: FileSnapshot
     var isHistorical: Bool = false
+
+    func matchesAvailableProject(_ project: ProjectDirectory) -> Bool {
+        project.isAvailable && snapshot.device == project.snapshot.device && snapshot.inode == project.snapshot.inode
+    }
 }
 
 enum ProjectLibraryFilter: String, CaseIterable, Identifiable {
@@ -72,8 +78,7 @@ struct ProjectLibraryQuery {
                recentPaths: [String], pinnedPaths: Set<String>) -> [ProjectDirectory] {
         let recentRanks = Dictionary(uniqueKeysWithValues: recentPaths.enumerated().map { ($0.element, $0.offset) })
         func summary(for project: ProjectDirectory) -> ProjectScanSummary? {
-            guard let value = summaries[project.path], value.snapshot.device == project.snapshot.device,
-                  value.snapshot.inode == project.snapshot.inode else { return nil }
+            guard let value = summaries[project.path], value.matchesAvailableProject(project) else { return nil }
             return value
         }
         return projects.filter { project in

@@ -11,9 +11,9 @@ A native macOS app for safely cleaning up AI-assisted projects, local tool data,
 
 Project Sweep runs locally. It does not connect to an AI service, require an API key, or download a model. It supports code, documents, presentations, images, video, and mixed projects.
 
-**Version:** 0.6.0 · **Platform:** Apple Silicon, macOS 14+ · **App interface:** English and Simplified Chinese
+**Version:** 0.6.1 · **Platform:** Apple Silicon, macOS 14+ · **App interface:** English and Simplified Chinese
 
-**[Download Project Sweep 0.6.0](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [View the changelog](CHANGELOG.md)
+**[Download Project Sweep 0.6.1](https://github.com/Oliverzheng0727/project-sweep/releases/latest)** · [View the changelog](CHANGELOG.md)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/project-cleanup-dark.png">
@@ -192,7 +192,7 @@ Restore rechecks each record and file before moving it. A conflicting destinatio
 
 ## Development and validation
 
-The core and UI checks are included in the build commands above. The current 0.6.0 acceptance record reports **145 passing core tests, including the installed Codex protocol check, 82 passing UI state checks, and 694 English localization entries checked for coverage and duplicate keys**. Cleanup tests use isolated generated data. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
+The core and UI checks are included in the build commands above. The current 0.6.1 acceptance record reports **154 passing core tests, including the installed Codex protocol check, 89 passing UI state checks, and 694 English localization entries checked for coverage and duplicate keys**. Cleanup tests use isolated generated data. See the [detailed acceptance record (Chinese)](docs/acceptance.md) for tested versions, methods, and limitations; a deployment target is not a claim of testing every supported OS or tool version.
 
 The actual Codex protocol test is optional and skipped unless you provide a local CLI path:
 
@@ -202,7 +202,7 @@ PROJECT_SWEEP_TEST_CODEX=/absolute/path/to/codex swift test
 
 It creates and deletes test sessions only in a temporary, isolated `CODEX_HOME`, without calling a model or touching normal tool directories.
 
-Project Sweep 0.6.0 passed this check with the locally installed **Codex CLI 0.147.0**: the test started the official app-server, created two isolated threads, deleted one through `thread/delete`, verified that the other remained readable, and confirmed that the deleted thread could no longer be read.
+Project Sweep 0.6.1 passed this check with the locally installed **Codex CLI 0.147.0**: the test started the official app-server, created two isolated threads, deleted one through `thread/delete`, verified that the other remained readable, and confirmed that the deleted thread could no longer be read.
 
 An optional performance benchmark requires Python 3:
 
@@ -227,3 +227,10 @@ Protocol and storage references: [Codex app-server protocol](https://github.com/
 Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for development and reporting guidance. Use generated fixtures and remove personal paths, conversation content, and credentials from reports. See [SUPPORT.md](SUPPORT.md) for help and [SECURITY.md](SECURITY.md) for private vulnerability reporting.
 
 Project source code is licensed under the [MIT License](LICENSE). Codex, Claude, and Cursor names and logos belong to their respective owners and are outside this project's MIT grant; see [third-party notices](THIRD_PARTY_NOTICES.md). Project Sweep is an independent project and does not imply official affiliation or endorsement.
+
+## 0.6.1 reliability improvements
+
+- A keep rule on a parent folder also blocks removing a nested project. Organizing a folder inside `.agents`, `.claude`, `.codex`, or `.cursor` keeps tool configuration protected.
+- Whole-project scans compare final verification against the original inventory, including version-history folders; newly added or changed files require another scan.
+- Parent folders and their details show incomplete sizes when any child could not be measured. Large-project filtering reuses storage classifications, and unavailable projects are excluded from scanned/cache filters.
+- Project cards expose dates, scan totals, historical status, and an open action to accessibility tools.
